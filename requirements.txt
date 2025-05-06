@@ -1,1 +1,2 @@
 faster-whisper
+moviepy==1.0.3
