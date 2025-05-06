@@ -1,1 +1,4 @@
 faster-whisper
+numpy
+matplotlib
+reportlab
