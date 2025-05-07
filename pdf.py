@@ -32,7 +32,7 @@ def create_pdf(
 
     # Title
     pdf.setTitle(f"Speech Report #{report_number}") 
-    pdf.setFont("Times-Roman-Bold", 16)
+    pdf.setFont("Times-Roman", 16)
     pdf.drawString(x, y, f"Speech Report #{report_number}")
     y -= line_height * 2
 
