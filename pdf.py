@@ -1,11 +1,10 @@
 from reportlab.pdfgen import canvas 
 import random
 import matplotlib.pyplot as plt
-import numpy as np
 from typing import List, Tuple, Dict
 import os
 
-def create_plot(points: List[Tuple[np.float64, np.float64]], title: str, x_axis_name: str, y_axis_name: str, save_to_path: str) -> None:
+def create_plot(points: List[Tuple[float, float]], title: str, x_axis_name: str, y_axis_name: str, save_to_path: str) -> None:
     x, y = zip(*points)
     plt.plot(x, y, marker='o')
     plt.title(title)
@@ -18,8 +17,8 @@ def create_plot(points: List[Tuple[np.float64, np.float64]], title: str, x_axis_
 def create_pdf(
         word_count: int, 
         parts_of_speech: Dict[str, int], 
-        rate_of_speech_points: List[Tuple[np.float64, np.float64]],
-        volume_points: List[Tuple[np.float64, np.float64]],
+        rate_of_speech_points: List[Tuple[float, float]],
+        volume_points: List[Tuple[float, float]],
 ):
 
     for dir_name in ["pdfs", "graphs"]:
@@ -27,14 +26,21 @@ def create_pdf(
 
     report_number = int(random.random()*10000)
     pdf = canvas.Canvas(f"pdfs/goldenbek{report_number}.pdf")
-    pdf.setTitle(f"Speech Report #{report_number}") 
-    texts = [
-        f"Word Count: {word_count}"
-    ]
-
     x = 50
     y = 750
     line_height = 15
+
+    # Title
+    pdf.setTitle(f"Speech Report #{report_number}") 
+    pdf.setFont("Times-Roman-Bold", 16)
+    pdf.drawString(x, y, f"Speech Report #{report_number}")
+    y -= line_height * 2
+
+    # Stats
+    pdf.setFont("Times-Roman", 12)  
+    texts = [
+        f"Word Count: {word_count}"
+    ]
 
     for name, count in parts_of_speech.items():
         texts.append(f"{name}: {count}")
@@ -46,6 +52,7 @@ def create_pdf(
     # TODO: ADD grammary stuff here
     # and the Verbal Pauses
 
+    # Graphs
     y -= 20
 
     create_plot(rate_of_speech_points, "Rate of speech", "Time", "Rate of speech (per second)", "graphs/ros.png")
