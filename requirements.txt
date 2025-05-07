@@ -2,3 +2,4 @@ faster-whisper
 numpy
 matplotlib
 reportlab
+moviepy==1.0.3
