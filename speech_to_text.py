@@ -1,6 +1,6 @@
 from faster_whisper import WhisperModel
 
-audio_path = "SoliyevShort.wav"
+# audio_path = "SoliyevShort.wav"
 
 model_size = "large-v3"
 model = WhisperModel(model_size, device="cpu", compute_type="int8")
@@ -22,5 +22,6 @@ def speech_to_words(audio_path):
             if text:
                 output[(start, end)] = text
 
-    for k, v in output.items():
-        print(k, v)
+    # for k, v in output.items():
+    #     print(k, v)
+    return output
