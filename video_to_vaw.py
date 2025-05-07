@@ -87,7 +87,7 @@ def convert_video_to_wav(video_path, output_path):
         # Ensure video is closed even if there's an error
         try:
             if 'video' in locals():
-                video.close()
+                video.close() # type: ignore
         except:
             pass
         return False

@@ -13,7 +13,7 @@ def speech_to_words(audio_path):
     output = {}
 
     for segment in segments:
-        for word in segment.words:
+        for word in segment.words or []:
             start = round(word.start, 2)
             end = round(word.end, 2)
             text = word.word.strip()
