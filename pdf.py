@@ -3,6 +3,7 @@ import random
 import matplotlib.pyplot as plt
 import numpy as np
 from typing import List, Tuple, Dict
+import os
 
 def create_plot(points: List[Tuple[np.float64, np.float64]], title: str, x_axis_name: str, y_axis_name: str, save_to_path: str) -> None:
     x, y = zip(*points)
@@ -11,8 +12,7 @@ def create_plot(points: List[Tuple[np.float64, np.float64]], title: str, x_axis_
     plt.xlabel(x_axis_name)
     plt.ylabel(y_axis_name)
     plt.savefig(save_to_path)
-
-
+    plt.close()
 
 
 def create_pdf(
@@ -21,6 +21,10 @@ def create_pdf(
         rate_of_speech_points: List[Tuple[np.float64, np.float64]],
         volume_points: List[Tuple[np.float64, np.float64]],
 ):
+
+    for dir_name in ["pdfs", "graphs"]:
+        os.makedirs(dir_name, exist_ok=True)
+
     report_number = int(random.random()*10000)
     pdf = canvas.Canvas(f"pdfs/goldenbek{report_number}.pdf")
     pdf.setTitle(f"Speech Report #{report_number}") 
@@ -40,13 +44,13 @@ def create_pdf(
         y -= line_height
 
     # TODO: ADD grammary stuff here
-    #
+    # and the Verbal Pauses
 
     y -= 20
 
     create_plot(rate_of_speech_points, "Rate of speech", "Time", "Rate of speech (per second)", "graphs/ros.png")
     create_plot(volume_points, "Volume", "Time", "dB", "graphs/vol.png")
-    
+ 
     img_width = 400
     img_height = 300
 
