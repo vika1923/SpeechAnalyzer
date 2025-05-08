@@ -57,6 +57,8 @@ def create_pdf(
 
     create_plot(rate_of_speech_points, "Rate of speech", "Time", "Rate of speech (per second)", "graphs/ros.png")
     create_plot(volume_points, "Volume", "Time", "dB", "graphs/vol.png")
+
+    # TODO: fix if the image goes out of the border
  
     img_width = 400
     img_height = 300
