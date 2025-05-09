@@ -19,6 +19,7 @@ def parts_of_speech(text: str) -> Dict[str, int]:
     words = word_tokenize(text, "english")
     tagged = pos_tag(words, tagset='universal')
     tag_words: Dict[str, List[str]]= {}
+
     for word, tag in tagged:
         if tag in ['.', 'X']:
             continue 
