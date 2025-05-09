@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Tuple, Dict, List
 
-def rate_of_speech(words: Dict[Tuple[float, float], str], interval: float = 10.) -> List[Tuple[float, float]]:
+def get_rate_of_speech(words: Dict[Tuple[float, float], str], interval: float = 10.) -> List[Tuple[float, float]]:
     result = []
     wordcount = 0
     multiplier = 1

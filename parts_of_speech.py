@@ -27,6 +27,6 @@ def parts_of_speech(text: str) -> Dict[str, int]:
             normal_tag = POS_MARKINGS[tag]
         tag_words.setdefault(normal_tag, []).append(word)
 
-    return {pos: len(words) for pos, words in tag_words}
+    return {pos: len(words) for pos, words in tag_words.items()}
 
 
