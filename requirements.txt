@@ -5,3 +5,5 @@ reportlab
 moviepy==1.0.3
 deepmultilingualpunctuation
 nltk
+scipy
+torch

@@ -177,3 +177,4 @@ videos/*
 video_audios/*
 graphs/*
 pdfs/*
+.env
