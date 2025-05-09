@@ -30,7 +30,7 @@ full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
 parts_of_speech_dict = parts_of_speech.parts_of_speech(full_text)
 
 # Calculate rate of speech and volume data
-rate_of_speech_points = rate_of_speech.rate_of_speech(timestamped_transcript_by_words)
+rate_of_speech_points = rate_of_speech.get_rate_of_speech(timestamped_transcript_by_words)
 volume_points = read_volume.get_rms_per_segment(audio_path)
 
 # Call the function
