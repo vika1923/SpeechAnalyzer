@@ -4,10 +4,7 @@ matplotlib
 reportlab
 moviepy==1.0.3
 deepmultilingualpunctuation
-<<<<<<< HEAD
 nltk
 scipy
 torch
-=======
 librosa
->>>>>>> f72d35ac6c20f17457ad9b1450d296eea46f1c7d

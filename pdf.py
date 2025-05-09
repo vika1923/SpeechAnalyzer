@@ -20,7 +20,6 @@ def create_pdf(
         rate_of_speech_points: List[Tuple[float, float]],
         volume_points: List[Tuple[float, float]],
 ):
-
     for dir_name in ["pdfs", "graphs"]:
         os.makedirs(dir_name, exist_ok=True)
 
