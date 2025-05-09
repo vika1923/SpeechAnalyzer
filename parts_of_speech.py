@@ -13,20 +13,19 @@ POS_MARKINGS = {
     'DET' : 'Determiners',
     'NUM' : 'Cardinal',
     'PRT' : 'Particles',
-    'X' : 'Other',
 }
 
-def parts_of_speech(text: str) -> Dict[str, List[str]]:
+def parts_of_speech(text: str) -> Dict[str, int]:
     words = word_tokenize(text, "english")
     tagged = pos_tag(words, tagset='universal')
-    result = {}
-
+    tag_words: Dict[str, List[str]]= {}
     for word, tag in tagged:
-        if tag == '.':
+        if tag in ['.', 'X']:
             continue 
         else:
             normal_tag = POS_MARKINGS[tag]
-        result.setdefault(normal_tag, []).append(word)
-    return result
+        tag_words.setdefault(normal_tag, []).append(word)
+
+    return {pos: len(words) for pos, words in tag_words}
 
 
