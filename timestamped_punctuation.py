@@ -1,8 +1,9 @@
-from typing import Dict, Tuple
+from typing import Dict
 import re
-def timestamp_punctuation_to_index( timestamped_transcript: Dict[Tuple[float, float], str], 
+from custom_types import TimeStamp, WordBoundary
+def timestamp_punctuation_to_index( timestamped_transcript: Dict[TimeStamp, str], 
         punctuated_text: str
-) -> Dict[Tuple[float, float], Tuple[int, int]]:
+) -> Dict[TimeStamp, WordBoundary]:
     """
     Match each word from a timestamped transcript to its character indices in a punctuated text.
 

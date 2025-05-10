@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.io import wavfile
 
-def get_rms_per_segment(audio_location, segment_duration_sec=2):
+def get_rms_per_segment(audio_location: str, segment_duration_sec: float=2):
     sample_rate, data = wavfile.read(audio_location)
 
     # Convert to mono if stereo

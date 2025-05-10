@@ -1,6 +1,7 @@
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 from typing import Dict, List
+from custom_types import PartOfSpeech
 
 POS_MARKINGS = {
     'VERB' : 'Verbs',
@@ -15,7 +16,7 @@ POS_MARKINGS = {
     'PRT' : 'Particles',
 }
 
-def parts_of_speech(text: str) -> Dict[str, int]:
+def parts_of_speech(text: str) -> Dict[PartOfSpeech, int]:
     words = word_tokenize(text, "english")
     tagged = pos_tag(words, tagset='universal')
     tag_words: Dict[str, List[str]]= {}
@@ -27,6 +28,6 @@ def parts_of_speech(text: str) -> Dict[str, int]:
             normal_tag = POS_MARKINGS[tag]
         tag_words.setdefault(normal_tag, []).append(word)
 
-    return {pos: len(words) for pos, words in tag_words.items()}
+    return {pos: len(words) for pos, words in tag_words.items()} # type: ignore
 
 
