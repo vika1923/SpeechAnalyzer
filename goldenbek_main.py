@@ -19,6 +19,8 @@ nltk.download('averaged_perceptron_tagger_eng')
 # Convert video to WAV
 audio_path = video_to_vaw.convert_video_to_wav("videos/IMG_1551.mp4")
 print(f"Audio path: {audio_path}")
+if audio_path is None:
+    raise ValueError()
 
 # Transcribe speech to text
 timestamped_transcript_by_words = speech_to_text.speech_to_words(audio_path=audio_path)
@@ -39,9 +41,7 @@ print("Parts of speech:", parts_of_speech_dict)
 rate_of_speech_points: List[Tuple[float, float]] = rate_of_speech.get_rate_of_speech(timestamped_transcript_by_words)
 print("Rate of speech points:", rate_of_speech_points)
 if not rate_of_speech_points:
-    print("WARNING: No rate of speech points generated!")
-    # Add some default points if none are generated
-    rate_of_speech_points = [(0, 0), (10, 0), (20, 0), (30, 0), (40, 0), (50, 0)]
+    raise Exception("No rate of speech points generated!")
 
 volume_points = read_volume.get_rms_per_segment(audio_path)
 print("Volume points:", volume_points[:5])

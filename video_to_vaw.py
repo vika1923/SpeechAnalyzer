@@ -7,7 +7,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-def convert_video_to_wav(video_path):
+def convert_video_to_wav(video_path: str) -> str | None:
     """Convert a video file to WAV format and save in video_audios/ folder."""
     os.makedirs('video_audios', exist_ok=True)
 
