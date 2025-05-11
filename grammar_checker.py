@@ -47,7 +47,3 @@ def get_parsed_corrected_text(corrected_sentences):
             start_idx = closing_tag + 4
             
     return mistake_indices
-
-ct = get_corrected_text(influent_sentences=influent_sentences)
-print(ct)
-print(get_parsed_corrected_text(ct))
