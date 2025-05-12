@@ -16,3 +16,4 @@ language-tool-python>=2.5.3
 requests
 eng-to-ipa
 dtwalign
+vaderSentiment>=3.3.2
