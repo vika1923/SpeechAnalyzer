@@ -14,3 +14,5 @@ spacy>=3.7.0  # Updated for Python 3.12 compatibility
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
 language-tool-python>=2.5.3
 requests
+eng-to-ipa
+dtwalign
