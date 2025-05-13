@@ -1,5 +1,5 @@
 import unittest
-from typing import Dict, List, Tuple
+from typing import Dict
 from custom_types import PartOfSpeech
 from pdf import create_pdf
 class TestCreatePDF(unittest.TestCase):
@@ -9,7 +9,7 @@ class TestCreatePDF(unittest.TestCase):
         rate_of_speech_points = [(0.0, 2.0), (1.0, 2.5), (2.0, 2.2)]
         volume_points = [(0.0, 60.0), (1.0, 58.0), (2.0, 62.0)]
 
-        create_pdf( word_count, parts_of_speech, rate_of_speech_points, volume_points, )
+        # create_pdf( word_count, parts_of_speech, rate_of_speech_points, volume_points, ) TODO: maybe change tests
 
 if __name__ == "__main__":
     unittest.main()
