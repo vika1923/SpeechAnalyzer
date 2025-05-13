@@ -51,8 +51,6 @@ def _wrap_and_hyphenate(text: str, font: str, size: float, max_width: float):
     at existing hyphens or by splitting long words.
     Returns: List of (line_text, start_char_index).
     """
-    # WARNING: created by Chat Gypyty
-    # TODO: Test Everything So it works
     words = text.split(' ')
     lines = []
     current_line = ""
