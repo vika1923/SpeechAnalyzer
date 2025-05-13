@@ -1,12 +1,12 @@
+from faster_whisper.transcribe import Word
 from reportlab.pdfgen import canvas 
 from reportlab.lib.pagesizes import A4
+from reportlab.pdfbase import pdfmetrics
 import random
 import matplotlib.pyplot as plt
-from typing import List, Tuple, Dict
-from reportlab.lib import colors
-from reportlab.pdfbase.pdfmetrics import stringWidth
+from typing import List, Dict
 import os
-from custom_types import UnderlineType, PartOfSpeech, Point, ColorType, WordBoundary
+from custom_types import PartOfSpeech, Point, WordBoundary
 
 def create_plot(points: List[Point], title: str, x_axis_name: str, y_axis_name: str, save_to_path: str) -> None:
     x, y = zip(*points)
@@ -45,101 +45,148 @@ def draw_graph(pdf: canvas.Canvas, x: float, y: float, img_path: str, img_width:
     pdf.drawImage(img_path, x, y - img_height, width=img_width, height=img_height)
     return y - (img_height + 20)
 
-
-
-def draw_block_of_text_with_underline_styles(
-    pdf: canvas.Canvas, x: float, y: float, text: str, 
-    highlight: List[Tuple[WordBoundary, ColorType]] = [],
-    underline: List[Tuple[WordBoundary, UnderlineType]] = [],
-    font: str = "Times-Roman", size: int = 12, 
-    line_height: float = 14, max_width: float = 500
-) -> float:
-    pdf.setFont(font, size)
+def _wrap_and_hyphenate(text: str, font: str, size: float, max_width: float):
+    """
+    Breaks `text` into lines that fit within `max_width`, using simple hyphenation
+    at existing hyphens or by splitting long words.
+    Returns: List of (line_text, start_char_index).
+    """
+    # WARNING: created by Chat Gypyty
+    # TODO: Test Everything So it works
+    words = text.split(' ')
     lines = []
     current_line = ""
-    current_index = 0
+    index = 0  # running char index in original text
+    line_start_idx = 0
 
-    words = text.split(" ")
-    for word in words:
-        test_line = current_line + (" " if current_line else "") + word
-        if stringWidth(test_line, font, size) > max_width:
-            lines.append((current_line, current_index - len(current_line)))
-            current_line = word
-        else:
+    for w in words:
+        w_with_space = ("" if current_line=="" else " ") + w
+        test_line = current_line + w_with_space
+        w_width = pdfmetrics.stringWidth(test_line, font, size)
+        if w_width <= max_width:
             current_line = test_line
-        current_index += len(word) + 1  # +1 for space
+        else:
+            # try hyphenation at existing hyphens
+            if '-' in w and pdfmetrics.stringWidth(current_line + " " + w[:w.index('-')+1]+'-', font, size) <= max_width:
+                # split at hyphen
+                prefix = w[:w.index('-')+1] + '-'
+                suffix = w[w.index('-')+1:]
+                current_line += ("" if current_line=="" else " ") + prefix
+                lines.append((current_line, line_start_idx))
+                line_start_idx = index + len(prefix) + (1 if current_line!="" else 0)
+                current_line = suffix
+            else:
+                # forced break: put current_line, start fresh
+                lines.append((current_line, line_start_idx))
+                line_start_idx = index + (1 if current_line!="" else 0)
+                current_line = w
+        index += len(w_with_space)
     if current_line:
-        lines.append((current_line, len(text) - len(current_line)))
+        lines.append((current_line, line_start_idx))
+    return lines
 
-    for line_text, global_offset in lines:
-        underline_y = y - 2
-
-        # Draw highlights
-        for (start, end), color in highlight:
-            if end <= global_offset or start >= global_offset + len(line_text):
-                continue  # Not in this line
-            sub_start = max(start, global_offset)
-            sub_end = min(end, global_offset + len(line_text))
-            prefix = line_text[:sub_start - global_offset]
-            sub = line_text[sub_start - global_offset:sub_end - global_offset]
-
-            highlight_x = x + stringWidth(prefix, font, size)
-            width = stringWidth(sub, font, size)
-            pdf.setFillColorRGB(*color)
-            pdf.rect(highlight_x, y - line_height + 2, width, line_height - 2, fill=1)
-            pdf.setFillColor(colors.black)
-
-        # Draw text
-        pdf.drawString(x, y, line_text)
-
-        # Draw underlines
-        for (start, end), style in underline:
-            if end <= global_offset or start >= global_offset + len(line_text):
+def _draw_highlights(pdf, x, y, line_text, line_idx0, font, size,
+                     under_spans, squiggle_spans, color_spans):
+    """
+    Draws red underlines / squiggles / rect highlights for all spans
+    that overlap this line.
+    """
+    # WARNING: created by Chat Gypyty
+    # TODO: Test Everything So it works
+    pdf.setLineWidth(1)
+    text_widths = [pdfmetrics.stringWidth(line_text[:i], font, size) for i in range(len(line_text)+1)]
+    for span_list, style in (
+        (under_spans, 'underline'),
+        (squiggle_spans, 'squiggle'),
+        (color_spans, 'color'),
+    ):
+        for (span_start, span_end) in span_list:
+            # check overlap
+            line_start = line_idx0
+            line_end = line_idx0 + len(line_text)
+            if span_end <= line_start or span_start >= line_end:
                 continue
-            sub_start = max(start, global_offset)
-            sub_end = min(end, global_offset + len(line_text))
-            prefix = line_text[:sub_start - global_offset]
-            sub = line_text[sub_start - global_offset:sub_end - global_offset]
+            # compute in‐line coords
+            s = max(span_start, line_start) - line_start
+            e = min(span_end, line_end)   - line_start
+            x0 = x + text_widths[s]
+            x1 = x + text_widths[e]
+            if style == 'color':
+                pdf.setFillColorRGB(1,0,0, alpha=0.2)
+                pdf.rect(x0, y - size*0.2, x1 - x0, size*1.1, fill=1, stroke=0)
+                pdf.setFillColorRGB(0,0,0)
+            else:
+                pdf.setStrokeColorRGB(1,0,0)
+                if style == 'underline':
+                    pdf.line(x0, y-2, x1, y-2)
+                else:  # squiggle
+                    period = 4
+                    amp = 1.5
+                    x_pos = x0
+                    toggle = False
+                    while x_pos < x1:
+                        y_off = amp if toggle else 0
+                        pdf.line(x_pos, y-2+y_off, min(x_pos+period, x1), y-2 + (0 if toggle else amp))
+                        x_pos += period
+                        toggle = not toggle
+                pdf.setStrokeColorRGB(0,0,0)
 
-            underline_x = x + stringWidth(prefix, font, size)
-            width = stringWidth(sub, font, size)
 
-            pdf.setStrokeColor(colors.black)
-            pdf.setLineWidth(0.7)
+def draw_text_block(pdf: canvas.Canvas,
+                    x: float, y: float,
+                    width: float, text: str,
+                    underline_spans: List[WordBoundary],
+                    squiggle_spans: List[WordBoundary],
+                    color_spans: List[WordBoundary],
+                    font="Times-Roman", size=12):
+    """
+    Draws `text` within a box of given `width`, starting at (x,y).  
+    *underline_spans*, *squiggle_spans*, *color_spans* are lists of (start_idx,end_idx)
+    in the original `text` where you want each style.  All highlighting is in red.
+    Returns the new y position after drawing the block.
+    """
+    # WARNING: created by Chat Gypyty
+    # TODO: Test Everything So it works
 
-            if style == "solid":
-                pdf.line(underline_x, underline_y, underline_x + width, underline_y)
-            elif style == "dashed":
-                pdf.setDash(3, 2)
-                pdf.line(underline_x, underline_y, underline_x + width, underline_y)
-                pdf.setDash()
-            elif style == "dotted":
-                pdf.setDash(1, 3)
-                pdf.line(underline_x, underline_y, underline_x + width, underline_y)
-                pdf.setDash()
-            elif style == "double":
-                pdf.line(underline_x, underline_y, underline_x + width, underline_y)
-                pdf.line(underline_x, underline_y - 2, underline_x + width, underline_y - 2)
+    # wrap & hyphenate
+    lines = _wrap_and_hyphenate(text, font, size, width)
 
+    pdf.setFont(font, size)
+    line_height = size * 1.2
+
+    for line_text, line_idx0 in lines:
+        # draw text
+        pdf.drawString(x, y, line_text)
+        # draw any highlights on this line
+        _draw_highlights(pdf, x, y, line_text, line_idx0, font, size,
+                         underline_spans, squiggle_spans, color_spans)
         y -= line_height
+
+        # if you want page‐break logic, call maybe_new_page here:
+        # y = maybe_new_page(pdf, y, line_height, A4[1])
 
     return y
 
 def create_pdf(
+        punctuated_text: str,
         word_count: int, 
         parts_of_speech: Dict[PartOfSpeech, int], 
         rate_of_speech_points: List[Point],
         volume_points: List[Point],
-        image_scaling: float = 2 / 3
+        pronunciation_mistakes: List[WordBoundary],
+        floss_mistakes: List[WordBoundary],
+        grammar_mistakes: List[WordBoundary],
+        image_scaling: float = 2 / 3,
 ):
     for dir_name in ["pdfs", "graphs"]:
         os.makedirs(dir_name, exist_ok=True)
 
     report_number = int(random.random()*10000)
     pdf = canvas.Canvas(f"pdfs/goldenbek{report_number}.pdf")
-    _, page_height = A4
+    page_width, page_height = A4
+    margin = 50
     x = 50
-    y = page_height - 50
+    y = page_height - margin
 
     # Title
     pdf.setTitle(f"Speech Report #{report_number}") 
@@ -151,8 +198,10 @@ def create_pdf(
         stats.append(f"{name}: {count}")
     y = draw_stats(pdf, x, y, stats)
 
-    # TODO: ADD grammary stuff here
-    # and the Verbal Pauses
+
+    # Text blocks
+    column_width = page_width - margin * 2
+    y = draw_text_block(pdf, x, y, column_width, punctuated_text, pronunciation_mistakes, floss_mistakes, grammar_mistakes)
 
     # Graphs
     create_plot(rate_of_speech_points, "Rate of speech", "Time", "Rate of speech (per second)", "graphs/ros.png")

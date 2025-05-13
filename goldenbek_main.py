@@ -3,6 +3,8 @@ from typing import List, Tuple
 import insert_punctuation
 # import speech_to_text
 import pdf
+from predict_flaws import floss
+from timestamped_punctuation import timestamp_punctuation_to_index
 import video_to_vaw
 import speech_to_text
 import nltk
@@ -46,10 +48,17 @@ if not rate_of_speech_points:
 volume_points = read_volume.get_rms_per_segment(audio_path)
 print("Volume points:", volume_points[:5])
 
+tp2i = timestamp_punctuation_to_index(timestamped_transcript_by_words, full_text)
+floss_mistakes = floss(tp2i)
+
 # Call the function
 pdf.create_pdf(
+    punctuated_text=full_text,
     word_count=word_count,
     parts_of_speech=parts_of_speech_dict,
     rate_of_speech_points=rate_of_speech_points,
-    volume_points=volume_points
+    volume_points=volume_points,
+    pronunciation_mistakes=[], # TODO: paste in real values
+    floss_mistakes=floss_mistakes,
+    grammar_mistakes=[],       # TODO: paste in real values
 )
