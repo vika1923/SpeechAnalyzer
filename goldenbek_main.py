@@ -51,6 +51,8 @@ print("Volume points:", volume_points[:5])
 tp2i = timestamp_punctuation_to_index(timestamped_transcript_by_words, full_text)
 floss_mistakes = floss(tp2i)
 
+# TODO: change the text to grammar text and fix the indices
+
 # Call the function
 pdf.create_pdf(
     punctuated_text=full_text,
