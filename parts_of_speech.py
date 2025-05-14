@@ -1,3 +1,6 @@
+import nltk
+nltk.download('punkt')
+
 from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 from typing import Dict, List

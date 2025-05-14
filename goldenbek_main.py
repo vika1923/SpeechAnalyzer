@@ -85,10 +85,12 @@ if not rate_of_speech_points:
 volume_points = read_volume.get_rms_per_segment(audio_path)
 print("Volume points:", volume_points[:5])
 
-# Call the function
-pdf.create_pdf(
-    word_count=word_count,
-    parts_of_speech=parts_of_speech_dict,
-    rate_of_speech_points=rate_of_speech_points,
-    volume_points=volume_points
-)
+# This script is now for backend CLI/testing only. For web UI, use the FastAPI endpoints.
+if __name__ == "__main__":
+    # Call the function
+    pdf.create_pdf(
+        word_count=word_count,
+        parts_of_speech=parts_of_speech_dict,
+        rate_of_speech_points=rate_of_speech_points,
+        volume_points=volume_points
+    )
