@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
@@ -41,6 +42,7 @@ export default function Home() {
       }
       const data = await res.json();
       setResults(data);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (err) {
       setError("Could not connect to backend");
     } finally {
@@ -120,9 +122,35 @@ export default function Home() {
           </form>
           {error && <div className="text-red-600 mt-2">{error}</div>}
           {results && (
-            <div className="mt-6 w-full bg-gray-100 p-4 rounded">
-              <h2 className="font-bold mb-2">Analysis Results</h2>
-              <pre className="text-xs whitespace-pre-wrap break-all">{JSON.stringify(results, null, 2)}</pre>
+            <div className="mt-6 w-full grid gap-4 grid-cols-1 md:grid-cols-2">
+              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
+                <h2 className="font-bold mb-2 text-highlight">Transcript</h2>
+                <p className="text-sm whitespace-pre-wrap break-words">{results.transcript}</p>
+              </div>
+              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
+                <h2 className="font-bold mb-2 text-highlight">Word Count</h2>
+                <p className="text-2xl font-bold">{results.word_count}</p>
+              </div>
+              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
+                <h2 className="font-bold mb-2 text-highlight">Rate of Speech</h2>
+                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.rate_of_speech_points, null, 2)}</pre>
+              </div>
+              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
+                <h2 className="font-bold mb-2 text-highlight">Volume Points</h2>
+                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.volume_points, null, 2)}</pre>
+              </div>
+              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
+                <h2 className="font-bold mb-2 text-highlight">Tone Scores</h2>
+                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.tone_scores, null, 2)}</pre>
+              </div>
+              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
+                <h2 className="font-bold mb-2 text-highlight">Custom Tone Results</h2>
+                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.custom_tone_results, null, 2)}</pre>
+              </div>
+              <div className="bg-white border-card border-deep p-4 rounded-xl shadow md:col-span-2">
+                <h2 className="font-bold mb-2 text-highlight">Parts of Speech</h2>
+                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.parts_of_speech, null, 2)}</pre>
+              </div>
             </div>
           )}
         </div>
