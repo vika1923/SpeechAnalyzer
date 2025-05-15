@@ -11,3 +11,19 @@ body {
   color: #1C1C1C;
   background: #FAF9F5;
 }
+
+/* Loading Spinner Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #E3FF70;
+  border-top-color: #003432;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
