@@ -56,7 +56,7 @@ print("\nGrammarly-like Tone Analysis:")
 custom_tone_analyzer.print_tone_results(custom_tone_results)
 
 # Convert video to WAV
-audio_path = video_to_vaw.convert_video_to_wav("videos/IMG_1551.mp4")
+audio_path = video_to_vaw.convert_video_to_wav("uploaded_videos/video1880222787.mp4")
 print(f"Audio path: {audio_path}")
 if audio_path is None:
     raise ValueError()
