@@ -18,6 +18,7 @@ const config: Config = {
         aqua: '#AADED9',
         cream: '#F0EFE3',
         lime: '#E3FF70',
+        border: 'hsl(var(--border))',
       },
       animation: {
         'rotate-slow': 'spin 3s linear infinite',

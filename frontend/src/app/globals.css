@@ -40,7 +40,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-[hsl(var(--border))];
   }
 
   body {
@@ -65,6 +65,15 @@
   .text-highlight::after {
     content: '';
     @apply absolute bottom-0 left-0 w-full h-3 bg-lime/30 -z-10 transform -skew-x-12;
+  }
+
+  .volume-bar {
+    @apply absolute bottom-0 bg-gradient-to-t from-deepgreen to-aqua rounded-t-sm pulse-slow;
+    width: 4px;
+  }
+
+  .progress-bar {
+    @apply bg-burgundy h-2 rounded-full transition-all duration-500;
   }
 }
 

@@ -1,5 +1,5 @@
 {
-  "name": "temp-next",
+  "name": "frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,20 +10,21 @@
   },
   "dependencies": {
     "framer-motion": "^10.16.4",
-    "next": "13.4.19",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwindcss-animate": "^1.0.7"
+    "next": "^14.2.28",
+    "react": "^18",
+    "react-dom": "^18"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "autoprefixer": "^10.4.16",
-    "eslint": "^8.48.0",
-    "eslint-config-next": "13.4.19",
-    "postcss": "^8.4.31",
-    "tailwindcss": "^3.3.3",
+    "autoprefixer": "^10.0.1",
+    "css-loader": "^7.1.2",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.3",
+    "postcss": "^8",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "^3.3.0",
     "typescript": "^5"
   }
 }

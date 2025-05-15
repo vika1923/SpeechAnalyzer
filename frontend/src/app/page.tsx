@@ -163,9 +163,8 @@ export default function Home() {
                         return (
                           <div 
                             key={index}
-                            className={`absolute bottom-0 bg-gradient-to-t from-deepgreen to-aqua rounded-t-sm pulse-slow`}
+                            className="volume-bar"
                             style={{
-                              width: '4px',
                               height: `${heightPercent}%`,
                               left: `${leftPosition}%`
                             }}
@@ -178,7 +177,7 @@ export default function Home() {
                   <motion.div 
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="border-card border-burgundy bg-burgundy p-6 reveal"
+                    className="border-card border-burgundy bg-white p-6 reveal"
                   >
                     <h3 className="font-display text-lg text-deepgreen mb-2">Tone Analysis</h3>
                     <div className="space-y-3">
@@ -190,7 +189,7 @@ export default function Home() {
                           </div>
                           <div className="w-full bg-cream rounded-full h-2">
                             <div 
-                              className="bg-burgundy h-2 rounded-full transition-all duration-500"
+                              className="progress-bar"
                               style={{ width: `${score * 100}%` }}
                             />
                           </div>
