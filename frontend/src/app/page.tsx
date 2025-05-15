@@ -1,21 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import Image from "next/image";
 import { useEffect, useState, useRef } from "react";
 
+interface AnalysisResults {
+  transcript: string;
+  word_count: number;
+  rate_of_speech_points: Record<string, number>;
+  volume_points: Record<string, number>;
+  tone_scores: Record<string, number>;
+  parts_of_speech: Record<string, number>;
+}
+
 export default function Home() {
-  const [backendMessage, setBackendMessage] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [results, setResults] = useState<any>(null);
+  const [results, setResults] = useState<AnalysisResults | null>(null);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    fetch("http://localhost:8000/api/hello")
-      .then((res) => res.json())
-      .then((data) => setBackendMessage(data.message))
-      .catch(() => setBackendMessage("Could not connect to backend"));
-  }, []);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,157 +50,82 @@ export default function Home() {
   };
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="mb-4 text-center text-base text-blue-600">
-          Backend says: {backendMessage}
-        </div>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-        <div className="flex flex-col items-center justify-center min-h-screen p-8">
-          <h1 className="text-2xl font-bold mb-4">Video Upload & Analysis</h1>
-          <div className="mb-4 text-blue-600">Backend says: {backendMessage}</div>
-          <form onSubmit={handleUpload} className="flex flex-col gap-4 w-full max-w-md items-center">
-            <input
-              type="file"
-              accept="video/*"
-              ref={fileInputRef}
-              className="block"
-              disabled={uploading}
-            />
-            <button
-              type="submit"
-              className="rounded bg-blue-600 text-white px-4 py-2 disabled:opacity-50"
-              disabled={uploading}
-            >
-              {uploading ? "Uploading..." : "Upload Video"}
-            </button>
-          </form>
-          {error && <div className="text-red-600 mt-2">{error}</div>}
+    <div className="min-h-screen bg-background">
+      <main className="container mx-auto px-4 py-8">
+        <h1 className="text-center mb-8">Speech Analyzer</h1>
+        <div className="max-w-2xl mx-auto">
+          <div className="border-card border-deep p-8 mb-8">
+            <h2 className="mb-6">Upload Your Video</h2>
+            <form onSubmit={handleUpload} className="space-y-4">
+              <div>
+                <input
+                  type="file"
+                  accept="video/*"
+                  ref={fileInputRef}
+                  className="w-full p-2 border rounded"
+                  disabled={uploading}
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-primary text-primary-foreground py-3 px-6 rounded-full hover:opacity-90 disabled:opacity-50"
+                disabled={uploading}
+              >
+                {uploading ? "Processing..." : "Analyze Speech"}
+              </button>
+            </form>
+            {error && (
+              <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded">
+                {error}
+              </div>
+            )}
+          </div>
+
           {results && (
-            <div className="mt-6 w-full grid gap-4 grid-cols-1 md:grid-cols-2">
-              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
-                <h2 className="font-bold mb-2 text-highlight">Transcript</h2>
-                <p className="text-sm whitespace-pre-wrap break-words">{results.transcript}</p>
+            <div className="space-y-6">
+              <div className="border-card border-deep p-6">
+                <h3 className="mb-4">Transcript</h3>
+                <p className="text-foreground">{results.transcript}</p>
               </div>
-              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
-                <h2 className="font-bold mb-2 text-highlight">Word Count</h2>
-                <p className="text-2xl font-bold">{results.word_count}</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="border-card border-mint p-6">
+                  <h3 className="mb-2">Word Count</h3>
+                  <p className="text-2xl font-bold">{results.word_count}</p>
+                </div>
+
+                <div className="border-card border-aqua p-6">
+                  <h3 className="mb-2">Rate of Speech</h3>
+                  <pre className="text-sm overflow-auto">
+                    {JSON.stringify(results.rate_of_speech_points, null, 2)}
+                  </pre>
+                </div>
+
+                <div className="border-card border-lime p-6">
+                  <h3 className="mb-2">Volume Analysis</h3>
+                  <pre className="text-sm overflow-auto">
+                    {JSON.stringify(results.volume_points, null, 2)}
+                  </pre>
+                </div>
+
+                <div className="border-card border-deep p-6">
+                  <h3 className="mb-2">Tone Analysis</h3>
+                  <pre className="text-sm overflow-auto">
+                    {JSON.stringify(results.tone_scores, null, 2)}
+                  </pre>
+                </div>
               </div>
-              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
-                <h2 className="font-bold mb-2 text-highlight">Rate of Speech</h2>
-                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.rate_of_speech_points, null, 2)}</pre>
-              </div>
-              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
-                <h2 className="font-bold mb-2 text-highlight">Volume Points</h2>
-                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.volume_points, null, 2)}</pre>
-              </div>
-              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
-                <h2 className="font-bold mb-2 text-highlight">Tone Scores</h2>
-                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.tone_scores, null, 2)}</pre>
-              </div>
-              <div className="bg-white border-card border-deep p-4 rounded-xl shadow">
-                <h2 className="font-bold mb-2 text-highlight">Custom Tone Results</h2>
-                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.custom_tone_results, null, 2)}</pre>
-              </div>
-              <div className="bg-white border-card border-deep p-4 rounded-xl shadow md:col-span-2">
-                <h2 className="font-bold mb-2 text-highlight">Parts of Speech</h2>
-                <pre className="text-xs whitespace-pre-wrap break-words">{JSON.stringify(results.parts_of_speech, null, 2)}</pre>
+
+              <div className="border-card border-burgundy p-6">
+                <h3 className="mb-2">Parts of Speech</h3>
+                <pre className="text-sm overflow-auto">
+                  {JSON.stringify(results.parts_of_speech, null, 2)}
+                </pre>
               </div>
             </div>
           )}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
