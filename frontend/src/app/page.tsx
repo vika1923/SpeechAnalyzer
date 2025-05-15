@@ -39,7 +39,7 @@ export default function Home() {
         const err = await res.json();
         setError(err.error || "Upload failed");
         return;
-      }
+      }     
       const data = await res.json();
       setResults(data);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -51,7 +51,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-animate from-cream via-mintgreen to-aqua">
+    <div className="min-h-screen w-full bg-gradient-animate from-cream via-mintgreen to-aqua">
       <main className="container mx-auto px-4 py-8">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
@@ -178,7 +178,7 @@ export default function Home() {
                   <motion.div 
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="border-card border-burgundy bg-white p-6 reveal"
+                    className="border-card border-burgundy bg-burgundy p-6 reveal"
                   >
                     <h3 className="font-display text-lg text-deepgreen mb-2">Tone Analysis</h3>
                     <div className="space-y-3">

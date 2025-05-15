@@ -1,5 +1,3 @@
-
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -46,12 +44,27 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-cream text-blackbase antialiased;
     font-family: 'Satoshi', sans-serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Migra', serif;
+  }
+}
+
+@layer components {
+  .border-card {
+    @apply rounded-[var(--radius)] border-4 overflow-hidden transition-all duration-300;
+  }
+
+  .text-highlight {
+    @apply relative inline-block;
+  }
+
+  .text-highlight::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-full h-3 bg-lime/30 -z-10 transform -skew-x-12;
   }
 }
 
@@ -82,6 +95,12 @@
 
   .animation-delay-700 {
     animation-delay: 700ms;
+  }
+
+  .bg-gradient-animate {
+    @apply bg-gradient-to-br from-cream via-mintgreen to-aqua;
+    background-size: 200% 200%;
+    animation: gradientShift 15s ease infinite;
   }
 }
 
