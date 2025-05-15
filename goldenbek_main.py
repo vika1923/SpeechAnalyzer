@@ -11,6 +11,8 @@ import read_volume
 import rate_of_speech
 import tone_analyzer
 import custom_tone_analyzer
+import os
+import sys
 
 # Download required NLTK data
 nltk.download('punkt')
@@ -55,11 +57,19 @@ custom_tone_results = custom_tone_analyzer.analyze_tones(sample_text)
 print("\nGrammarly-like Tone Analysis:")
 custom_tone_analyzer.print_tone_results(custom_tone_results)
 
+# Video processing section
+video_path = "uploaded_videos/video1880222787.mp4"
+if not os.path.exists(video_path):
+    print(f"\nError: No video file found at {video_path}")
+    print("Please place a video file in the uploaded_videos directory before running this script.")
+    sys.exit(1)
+
 # Convert video to WAV
-audio_path = video_to_vaw.convert_video_to_wav("uploaded_videos/video1880222787.mp4")
+audio_path = video_to_vaw.convert_video_to_wav(video_path)
 print(f"Audio path: {audio_path}")
 if audio_path is None:
-    raise ValueError()
+    print("Error: Failed to convert video to audio")
+    sys.exit(1)
 
 # Transcribe speech to text
 timestamped_transcript_by_words = speech_to_text.speech_to_words(audio_path=audio_path)
