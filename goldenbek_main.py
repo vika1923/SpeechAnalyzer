@@ -11,12 +11,51 @@ import nltk
 import parts_of_speech
 import read_volume
 import rate_of_speech
+import tone_analyzer
+import custom_tone_analyzer
 
 # Download required NLTK data
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('universal_tagset')
 nltk.download('averaged_perceptron_tagger_eng')
+
+# Sample text for tone analysis (now with real sentence boundaries)
+sample_text = """
+Hey there! So, I just wanted to get this off my chest because, honestly, it's been bugging me for a while now. You know how sometimes things just don't go your way, no matter how hard you try? Well, that's pretty much been my week in a nutshell. I mean, I tried to stay positive, but wow, it's like the universe had other plans. 
+
+First off, my phone decided to die on me right when I needed it most. I was supposed to meet up with some friends, but of course, I got lost because my maps wouldn't load. By the time I finally found the place, everyone was already leaving. They were nice about it, but I could tell they were annoyed. I felt like such a flake, even though it wasn't really my fault. 
+
+Then, to top it all off, I spilled coffee all over my favorite shirt right before a video call for work. I tried to laugh it off, but honestly, I just wanted to crawl back into bed and pretend the day hadn't started. My boss noticed, and while she tried to be understanding, I could tell she wasn't impressed. It's just one of those weeks where nothing seems to go right, you know?
+
+I even tried to cheer myself up by ordering my favorite takeout, but they got my order wrong and forgot the fries. Like, come on! Fries are the best part! I called to let them know, and they said they'd give me a discount next time, but it still felt like a letdown. 
+
+I know it's not the end of the world, and I'm trying to keep things in perspective, but it's hard not to feel a little down when everything just keeps piling up. I guess I just needed to vent. Thanks for listening, even if it's just through a screen. Here's hoping next week is a little less of a disaster. Fingers crossed!
+"""
+
+# Analyze tone of the sample text (VADER)
+tone_scores = tone_analyzer.analyze_tone(sample_text)
+tone_description = tone_analyzer.get_tone_description(tone_scores['compound'])
+print("\nTone Analysis Results (VADER):")
+print(f"Overall Tone: {tone_description}")
+print(f"Compound Score: {tone_scores['compound']:.2f}")
+print(f"Positive Score: {tone_scores['pos']:.2f}")
+print(f"Neutral Score: {tone_scores['neu']:.2f}")
+print(f"Negative Score: {tone_scores['neg']:.2f}")
+
+# Analyze tone changes throughout the text (VADER)
+segments = tone_analyzer.analyze_text_segments(sample_text)
+print("\nTone Analysis by Segments (VADER):")
+for i, (segment, scores) in enumerate(segments, 1):
+    print(f"\nSegment {i}:")
+    print(f"Text: {segment[:100]}...")
+    print(f"Tone: {tone_analyzer.get_tone_description(scores['compound'])}")
+    print(f"Compound Score: {scores['compound']:.2f}")
+
+# Analyze tones using custom rule-based analyzer (Grammarly-like)
+custom_tone_results = custom_tone_analyzer.analyze_tones(sample_text)
+print("\nGrammarly-like Tone Analysis:")
+custom_tone_analyzer.print_tone_results(custom_tone_results)
 
 # Convert video to WAV
 audio_path = video_to_vaw.convert_video_to_wav("videos/IMG_1551.mp4")
