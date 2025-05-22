@@ -3,7 +3,7 @@ from reportlab.lib.pagesizes import A4
 import random
 import matplotlib.pyplot as plt
 from typing import List, Tuple, Dict
-from reportlab.lib import colors
+from reportlab.lib.colors import red, black
 from reportlab.pdfbase.pdfmetrics import stringWidth
 import os
 from custom_types import PartOfSpeech, Point, ColorType, WordBoundary
