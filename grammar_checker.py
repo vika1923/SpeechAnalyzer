@@ -52,8 +52,5 @@ def get_parsed_corrections(corrected_sentences):
 
 # t = get_corrected_text(["hello! my name Karl.", 'how is you doing.', "this is a my dog."])
 # print(t)
-<<<<<<< HEAD
 # print(get_parsed_corrections(t))
-=======
 # print(get_parsed_corrections(t))
->>>>>>> origin/main
