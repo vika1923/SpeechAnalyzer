@@ -1,5 +1,5 @@
 import unittest
-from typing import Dict
+from typing import Dict, List, Tuple
 from custom_types import PartOfSpeech
 from pdf import create_pdf
 class TestCreatePDF(unittest.TestCase):
