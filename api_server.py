@@ -14,13 +14,21 @@ import custom_tone_analyzer
 
 app = FastAPI()
 
+# Configure CORS here
+origins = [
+    "http://localhost",
+    "http://localhost:3000", # Keep this one as it's common
+    "http://localhost:3002", # ADD THIS ONE - This is where your frontend is currently running
+    # You can add other origins if your frontend might be hosted elsewhere later
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/api/hello")
 def read_root():
