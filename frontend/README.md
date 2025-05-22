@@ -7,3 +7,4 @@ exit()
 import nltk
 nltk.download('universal_tagset')
 uvicorn api_server:app --reload
+pip install -r requirements.txt
