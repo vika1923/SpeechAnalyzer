@@ -172,6 +172,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+.DS_Store
 
 videos/*
 video_audios/*
