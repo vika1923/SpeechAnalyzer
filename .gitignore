@@ -172,10 +172,34 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+<<<<<<< HEAD
 .DS_Store
+=======
+>>>>>>> origin/main
 
 videos/*
 video_audios/*
 graphs/*
 pdfs/*
 .env
+<<<<<<< HEAD
+=======
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Local development
+*.local
+node_modules/
+node_modules/
+>>>>>>> origin/main
