@@ -1,4 +1,5 @@
 # import video_to_vaw
+from pdf import create_plot
 from typing import List, Tuple
 import insert_punctuation
 # import speech_to_text
@@ -107,17 +108,21 @@ floss_mistakes = floss(tp2i)
 
 # TODO: change the text to grammar text and fix the indices
 
+os.makedirs("graphs/", exist_ok=True)
+create_plot(rate_of_speech_points, "Rate of speech", "Time", "Rate of speech (per second)", "graphs/ros.png")
+create_plot(volume_points, "Volume", "Time", "dB", "graphs/vol.png")
+
 # Call the function
-pdf.create_pdf(
-    punctuated_text=full_text,
-    word_count=word_count,
-    parts_of_speech=parts_of_speech_dict,
-    rate_of_speech_points=rate_of_speech_points,
-    volume_points=volume_points,
-    pronunciation_mistakes=[], # TODO: paste in real values
-    floss_mistakes=floss_mistakes,
-    grammar_mistakes=[],       # TODO: paste in real values
-)
+# pdf.create_pdf(
+#     punctuated_text=full_text,
+#     word_count=word_count,
+#     parts_of_speech=parts_of_speech_dict,
+#     rate_of_speech_points=rate_of_speech_points,
+#     volume_points=volume_points,
+#     pronunciation_mistakes=[], # TODO: paste in real values
+#     floss_mistakes=floss_mistakes,
+#     grammar_mistakes=[],       # TODO: paste in real values
+# )
 # This script is now for backend CLI/testing only. For web UI, use the FastAPI endpoints.
 if __name__ == "__main__":
     ...
