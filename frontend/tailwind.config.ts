@@ -1,35 +1,31 @@
-// tailwind.ts
-import type { Config } from "tailwindcss";
+// tailwind.config.ts
+import type { Config } from 'tailwindcss'; // Good practice to import Config type
+import tailwindcssAnimate from 'tailwindcss-animate'; // <-- ADD THIS LINE
 
 const config: Config = {
   // Specifies the files to scan for Tailwind classes.
-  // This helps Tailwind generate only the CSS you need.
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./pages/**/*.{js,jsx}", // Added from the first config
-    "./components/**/*.{js,jsx}", // Added from the first config
-    "./app/**/*.{js,jsx}", // Added from the first config
-    "./src/**/*.{js,jsx}", // Added from the first config
+    // The following lines are potentially redundant if covered by the line above,
+    // but keep them if you have files outside 'src' that are not in 'pages', 'components', 'app'
+    "./pages/**/*.{js,jsx}",
+    "./components/**/*.{js,jsx}",
+    "./app/**/*.{js,jsx}",
+    "./src/**/*.{js,jsx}",
   ],
-  // Enables dark mode based on the 'class' strategy.
-  // This allows toggling dark mode by adding/removing a 'dark' class on the HTML element.
   darkMode: ['class'],
   theme: {
-    // Defines container styles for responsive layouts.
     container: {
-      center: true, // Centers the container horizontally
-      padding: '2rem', // Adds padding to the container
+      center: true,
+      padding: '2rem',
       screens: {
-        '2xl': '1400px', // Sets a max-width for the 2xl breakpoint
+        '2xl': '1400px',
       },
     },
-    // Extends Tailwind's default theme with custom values.
     extend: {
-      // Custom color palette.
       colors: {
-        // Default Tailwind colors (from user's first config)
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -63,7 +59,6 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        // Custom colors from user's first config
         purple: '#9b87f5',
         indigo: {
           400: '#818cf8',
@@ -86,7 +81,6 @@ const config: Config = {
           400: '#f472b6',
           500: '#ec4899'
         },
-        // Custom colors from user's second config
         deepgreen: '#9b87f5',
         burgundy: '#818cf8',
         blueaccent: '#ffe6cc',
@@ -97,13 +91,11 @@ const config: Config = {
         cream: '#F0EFE3',
         lime: '#E3FF70',
       },
-      // Custom border radius values.
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
-      // Defines custom keyframe animations.
       keyframes: {
         'accordion-down': {
           from: { height: '0' },
@@ -119,21 +111,20 @@ const config: Config = {
         },
         'fadeIn': {
           '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
+          '100%': { opacity: '1'},
         },
       },
-      // Maps keyframes to animation utilities.
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'rotate-slow': 'rotate-slow 3s linear infinite',
-        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite', // Note: 'pulse' is a default Tailwind animation, but included here as per user's request
+        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-in': 'fadeIn 0.5s ease-in-out',
       },
     },
   },
-  // Adds Tailwind CSS plugins.
-  plugins: [require('tailwindcss-animate')],
-} satisfies Config;
+  // Corrected plugins usage
+  plugins: [tailwindcssAnimate], // <-- CHANGE THIS LINE
+};
 
 export default config;
