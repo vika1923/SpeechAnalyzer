@@ -12,12 +12,15 @@ import parts_of_speech
 import read_volume
 import rate_of_speech
 import tone_analyzer
+from gramformer import Gramformer
+
 import custom_tone_analyzer
 import os
 import sys
 # from custom_types import TimeStamp
 
 # Download required NLTK data
+
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('universal_tagset')
