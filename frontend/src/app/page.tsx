@@ -1,8 +1,18 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import {
+  PieChart, Pie, Cell, // Add these
+} from 'recharts';
 import { motion, AnimatePresence } from "framer-motion";
 import { FaMicrophone } from "react-icons/fa"; // Make sure to install react-icons: npm install react-icons
-
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+import {
+  // ... other imports
+  BarChart, Bar, // Add these
+  // ... rest of imports
+} from 'recharts';
 /**
  * Defines the structure for the analysis results returned from the backend.
  * @property {string} transcript - The full transcribed text of the speech.
@@ -298,46 +308,55 @@ export default function App() {
                   </motion.div>
 
                   {/* Rate of Speech */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="border-card border-teal-500 bg-teal-50 p-6 shadow-xl rounded-xl"
-                  >
-                    <h3 className="font-display text-lg text-teal-700 mb-2">Rate of Speech</h3>
-                    <div className="text-sm space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-2">
-                      {results.rate_of_speech_points.map(([time, rate], index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="text-gray-700">{time.toFixed(1)}s:</span>
-                          <span className="font-medium text-teal-600">{(rate * 60).toFixed(1)} words/min</span>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
+                 {/* Rate of Speech Chart */}
+<motion.div
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.5 }}
+    className="border-card border-teal-500 bg-teal-50 p-6 shadow-xl rounded-xl"
+>
+    <h3 className="font-display text-lg text-teal-700 mb-2">Rate of Speech (Words/Min)</h3>
+    <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={results.rate_of_speech_points.map(([time, rate]) => ({
+            time: time.toFixed(1),
+            "Words/Min": (rate * 60).toFixed(1) // Convert to words per minute
+        }))}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0f2f2" />
+            <XAxis dataKey="time" label={{ value: "Time (s)", position: "insideBottom", offset: -5 }} />
+            <YAxis label={{ value: "Words/Min", angle: -90, position: "insideLeft" }} />
+            <Tooltip
+                formatter={(value: any, name: string) => [`${value} ${name}`, `Time: ${name === "Words/Min" ? "" : name}s`]}
+                labelFormatter={(label: any) => `At ${label}s`}
+            />
+            <Legend />
+            <Line type="monotone" dataKey="Words/Min" stroke="#009688" activeDot={{ r: 8 }} />
+        </LineChart>
+    </ResponsiveContainer>
+</motion.div>
 
                   {/* Volume Analysis */}
-                  <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="border-card border-orange-500 bg-orange-50 p-6 shadow-xl rounded-xl"
-                  >
-                    <h3 className="font-display text-lg text-orange-700 mb-2">Volume Analysis</h3>
-                    <div className="relative h-32 mt-4 flex items-end justify-around">
-                      {Object.entries(results.volume_points).map(([time, volume], index) => {
-                        const heightPercent = Math.min(Math.max(volume, 0), 1) * 100; // Normalize volume to 0-100
-                        return (
-                          <div
-                            key={time}
-                            className="w-1/12 bg-orange-400 mx-[1px] rounded-t-sm"
-                            style={{
-                              height: `${heightPercent}%`,
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </motion.div>
+           {/* Volume Analysis Chart */}
+<motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.6 }}
+    className="border-card border-orange-500 bg-orange-50 p-6 shadow-xl rounded-xl"
+>
+    <h3 className="font-display text-lg text-orange-700 mb-2">Volume Analysis</h3>
+    <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={Object.entries(results.volume_points).map(([time, volume]) => ({
+            time: time,
+            Volume: Math.min(Math.max(volume * 100, 0), 100) // Scale to 0-100 for display
+        }))}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffe0b2" />
+            <XAxis dataKey="time" label={{ value: "Time Segment", position: "insideBottom", offset: -5 }} hide={true} /> {/* Hide X-axis labels if too many */}
+            <YAxis label={{ value: "Volume (%)", angle: -90, position: "insideLeft" }} />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="Volume" fill="#fb923c" />
+        </BarChart>
+    </ResponsiveContainer>
+</motion.div>
 
                   {/* Tone Analysis */}
                   <motion.div
@@ -377,24 +396,45 @@ export default function App() {
                 </div>
 
                 {/* Parts of Speech Analysis */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  className="border-card border-indigo-700 bg-indigo-50 p-6 shadow-xl rounded-xl"
+           {/* Parts of Speech Analysis Chart */}
+<motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.8 }}
+    className="border-card border-indigo-700 bg-indigo-50 p-6 shadow-xl rounded-xl"
+>
+    <h3 className="font-display text-lg text-indigo-700 mb-4">Parts of Speech Distribution</h3>
+    <div className="flex flex-col md:flex-row items-center justify-center">
+        <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+                <Pie
+                    data={Object.entries(results.parts_of_speech).map(([part, count]) => ({
+                        name: part.replace('_', ' '), // Clean up name for display
+                        value: count
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    animationBegin={0}
+                    animationDuration={800}
+                    animationEasing="ease-out"
                 >
-                  <h3 className="font-display text-lg text-indigo-700 mb-4">Parts of Speech</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {Object.entries(results.parts_of_speech)
-                      .sort(([, countA], [, countB]) => (countB as number) - (countA as number)) // Sort by count descending
-                      .map(([part, count], index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-indigo-100 rounded-lg text-sm">
-                          <span className="capitalize text-gray-800">{part.replace('_', ' ')}:</span>
-                          <span className="font-medium text-indigo-700">{count}</span>
-                        </div>
-                    ))}
-                  </div>
-                </motion.div>
+                    {
+                        Object.entries(results.parts_of_speech).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} /> // Dynamic colors
+                        ))
+                    }
+                </Pie>
+                <Tooltip />
+                <Legend layout="vertical" align="right" verticalAlign="middle" />
+            </PieChart>
+        </ResponsiveContainer>
+    </div>
+</motion.div>
 
                 {/* Analyze Another Video button */}
                 <div className="text-center mt-8">
