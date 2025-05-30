@@ -5,15 +5,8 @@ import tailwindcssAnimate from 'tailwindcss-animate'; // <-- ADD THIS LINE
 const config: Config = {
   // Specifies the files to scan for Tailwind classes.
   content: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
-    // The following lines are potentially redundant if covered by the line above,
-    // but keep them if you have files outside 'src' that are not in 'pages', 'components', 'app'
-    "./pages/**/*.{js,jsx}",
-    "./components/**/*.{js,jsx}",
-    "./app/**/*.{js,jsx}",
-    "./src/**/*.{js,jsx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}", // This covers all files within the 'src' directory
+
   ],
   darkMode: ['class'],
   theme: {
