@@ -107,13 +107,6 @@ def get_parsed_corrections(highlighted_sentences: list[str]) -> list[tuple[tuple
 
 # --- FastAPI Routes ---
 
-@app.get("/api/hello")
-def read_root():
-    """
-    A simple endpoint to test if the backend is running.
-    """
-    return {"message": "Hello from Python backend!"}
-
 @app.post("/api/upload")
 async def upload_video(file: UploadFile = File(...)):
     """
@@ -124,7 +117,8 @@ async def upload_video(file: UploadFile = File(...)):
     os.makedirs(upload_dir, exist_ok=True) # Ensure the directory exists
 
     file_path = os.path.join(upload_dir, file.filename)
-    
+    audio_path = None # Initialize audio_path to None for cleanup in finally block
+
     try:
         # Save the uploaded file
         with open(file_path, "wb") as buffer:
@@ -142,20 +136,22 @@ async def upload_video(file: UploadFile = File(...)):
         word_count = rate_of_speech.count_words(timestamped_transcript_by_words)
         
         # Combine words into a single unpunctuated string
-        full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_items)
+        # FIX: Changed 'timestamped_transcript_by_items' to 'timestamped_transcript_by_words'
+        full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words)
         
         # Add punctuation to the full text
         full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
         
         # --- Grammar Correction ---
         # Get corrected text with highlights
+        # Gramformer works best on complete sentences. If full_text is very long, 
+        # consider splitting it into sentences before passing to get_corrected_text.
         corrected_highlighted_texts = get_corrected_text([full_text])
+        
         # Parse mistakes from the highlighted text. Assumes only one sentence was processed.
         grammar_mistakes = get_parsed_corrections(corrected_highlighted_texts)
-        # The plain corrected transcript (without highlight tags) can be obtained directly from gramformer.correct
-        # For simplicity, if corrected_highlighted_texts exists, use it. Otherwise, fallback to original.
-        # NOTE: If you need the *plain* corrected text, you'd call gf.correct and not gf.highlight
-        # For now, corrected_transcript will contain the highlight tags.
+        
+        # The corrected transcript (with highlight tags)
         corrected_transcript_with_highlights = corrected_highlighted_texts[0] if corrected_highlighted_texts else full_text
 
         # Analyze parts of speech
@@ -174,7 +170,7 @@ async def upload_video(file: UploadFile = File(...)):
         custom_tone_results = custom_tone_analyzer.analyze_tones(full_text)
 
         # Return all analysis results as JSON
-        return {
+        return JSONResponse(content={
             "word_count": word_count,
             "parts_of_speech": parts_of_speech_dict,
             "rate_of_speech_points": rate_of_speech_points,
@@ -184,14 +180,14 @@ async def upload_video(file: UploadFile = File(...)):
             "transcript": full_text,
             "corrected_transcript": corrected_transcript_with_highlights, # Send the highlighted text
             "grammar_mistakes": grammar_mistakes,                       # Send parsed mistakes
-        }
+        })
     except Exception as e:
-        # Log the error for debugging purposes (consider using a proper logging library)
+        # Log the error for debugging purposes (consider using a proper logging library like 'logging')
         print(f"Error processing video: {e}")
         return JSONResponse(status_code=500, content={"error": f"An error occurred during processing: {str(e)}"})
     finally:
         # Clean up temporary files
         if os.path.exists(file_path):
             os.remove(file_path)
-        if os.path.exists(audio_path):
+        if audio_path and os.path.exists(audio_path): # Ensure audio_path was successfully assigned before trying to remove
             os.remove(audio_path)
