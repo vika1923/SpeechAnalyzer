@@ -1,27 +1,68 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import {
+  PieChart, Pie, Cell, // Add these
+} from 'recharts';
 import { motion, AnimatePresence } from "framer-motion";
-
+import { FaMicrophone } from "react-icons/fa"; // Make sure to install react-icons: npm install react-icons
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
+import {
+  // ... other imports
+  BarChart, Bar, // Add these
+  // ... rest of imports
+} from 'recharts';
+/**
+ * Defines the structure for the analysis results returned from the backend.
+ * @property {string} transcript - The full transcribed text of the speech.
+ * @property {string} corrected_transcript - The grammatically corrected full text, potentially with HTML highlight tags.
+ * @property {number} word_count - The total number of words in the transcript.
+ * @property {[number, number][]} rate_of_speech_points - An array of [timestamp, rate] tuples,
+ * representing speech rate over time.
+ * @property {Record<string, number>} volume_points - An object where keys are timestamps (strings)
+ * and values are their corresponding volume levels.
+ * @property {Record<string, number>} tone_scores - An object where keys are tone categories
+ * (e.g., "compound", "pos", "neu", "neg") and values are their scores.
+ * @property {Record<string, number>} parts_of_speech - An object where keys are parts of speech
+ * (e.g., "NOUN", "VERB") and values are their counts.
+ * @property {[[[number, number], string, string]]} grammar_mistakes - An array of grammar mistakes,
+ * where each item is a tuple:
+ * - [0]: [start_index_in_highlighted_string, end_index_in_highlighted_string]
+ * - [1]: The suggested correction string.
+ * - [2]: The original incorrect word/phrase as captured by the tag content.
+ * @property {Record<string, number>} [custom_tone_results] - Optional: results for custom tone analysis.
+ */
 interface AnalysisResults {
   transcript: string;
+  corrected_transcript: string;
   word_count: number;
-  rate_of_speech_points: [number, number][];  // Array of [timestamp, rate] tuples
+  rate_of_speech_points: [number, number][];
   volume_points: Record<string, number>;
   tone_scores: Record<string, number>;
   parts_of_speech: Record<string, number>;
+  grammar_mistakes: [[[number, number], string, string]][]; // Updated type for grammar_mistakes
   custom_tone_results?: Record<string, number>;
 }
 
-export default function Home() {
+/**
+ * The main Home component for the Speech Analyzer application, styled as a SaaS landing page.
+ * Handles video uploads, displays upload status, errors, and analysis results.
+ */
+export default function App() {
   const [uploading, setUploading] = useState(false);
   const [results, setResults] = useState<AnalysisResults | null>(null);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (e: React.FormEvent) => {
+  /**
+   * Handles the video file upload process.
+   * @param {React.FormEvent | React.ChangeEvent} e - The form or change event.
+   */
+  const handleUpload = async (e: React.FormEvent | React.ChangeEvent) => {
     e.preventDefault();
     setError("");
-    setResults(null);
+    setResults(null); // Clear previous results
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
       setError("Please select a video file.");
@@ -39,67 +80,145 @@ export default function Home() {
         const err = await res.json();
         setError(err.error || "Upload failed");
         return;
-      }     
-      const data = await res.json();
+      }
+      const data: AnalysisResults = await res.json(); // Type assertion for incoming data
       setResults(data);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_err) {
-      setError("Could not connect to backend");
+      setError("Could not connect to backend. Please ensure the backend server is running.");
     } finally {
       setUploading(false);
     }
   };
 
+  /**
+   * Triggers the hidden file input when the microphone icon is clicked.
+   */
+  const handleMicrophoneClick = () => {
+    if (fileInputRef.current && !uploading) {
+      fileInputRef.current.click();
+    }
+  };
+
+  // Effect to handle 'reveal-scale' and 'reveal' animations at runtime using IntersectionObserver.
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        } else {
+          // Optional: remove 'active' if you want elements to re-animate on scroll back into view
+          // entry.target.classList.remove('active');
+        }
+      });
+    }, {
+      threshold: 0.1 // Trigger when 10% of the element is visible
+    });
+
+    const timer = setTimeout(() => {
+      document.querySelectorAll('.reveal-scale, .reveal, .float').forEach((element) => {
+        observer.observe(element);
+        // Add 'active' immediately for elements already in view on load, if desired
+        if (element.getBoundingClientRect().top < window.innerHeight) {
+          element.classList.add('active');
+        }
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen w-full bg-gradient-animate from-cream via-mintgreen to-aqua">
-      <main className="container mx-auto px-4 py-8">
-        <motion.h1 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl md:text-6xl font-display text-deepgreen text-center mb-8"
-        >
-          <span className="text-highlight">Speech Analyzer</span>
-        </motion.h1>
-        
-        <div className="max-w-2xl mx-auto">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex flex-col items-center justify-center p-4 sm:p-8 font-inter">
+      <header className="w-full max-w-6xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
+        <a href="#" className="text-white text-2xl font-bold font-display">
+          Speech Analyzer
+        </a>
+        <nav className="space-x-4">
+          <a href="#" className="text-white hover:text-blue-200 transition-colors">
+            About
+          </a>
+          <a href="#" className="text-white hover:text-blue-200 transition-colors">
+            Results
+          </a>
+        </nav>
+      </header>
+
+      <main className="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
+        <div className="w-full md:w-1/2 lg:w-1/2 mx-auto">
+          {/* Hero Section */}
+          <motion.h1
+            initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="border-card border-deep bg-white p-8 mb-8 reveal-scale"
+            transition={{ duration: 0.6 }}
+            className="text-5xl md:text-7xl font-display text-white text-center mb-4 leading-tight"
           >
-            <h2 className="font-display text-2xl text-deepgreen mb-6">Upload Your Video</h2>
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="video/*"
-                  ref={fileInputRef}
-                  className="w-full p-4 border-2 border-dashed border-aqua rounded-lg cursor-pointer hover:border-lime transition-colors"
-                  disabled={uploading}
-                />
-                {uploading && (
-                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg">
-                    <div className="w-8 h-8 border-4 border-deepgreen border-t-transparent rounded-full animate-rotate-slow"></div>
-                  </div>
-                )}
-              </div>
-              <motion.button
-                type="submit"
-                className="w-full bg-deepgreen text-cream py-3 px-6 rounded-full font-medium hover:bg-burgundy disabled:opacity-50 transition-all"
+            <span className="text-blue-200 text-highlight">Analyze Your Speech</span>
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-xl md:text-2xl text-white text-center max-w-3xl mb-12"
+          >
+            Get instant, AI-powered feedback on your spoken English. Upload a video and unlock your speaking potential.
+          </motion.p>
+
+          {/* Upload Section */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.4 }}
+            className="border-card border-indigo-700 bg-white p-8 mb-8 shadow-2xl rounded-xl reveal-scale w-full"
+          >
+            <h2 className="font-display text-3xl text-indigo-700 text-center mb-6"></h2>
+            <form onSubmit={handleUpload} className="flex flex-col md:flex-row items-center justify-center md:space-x-8 space-y-6 md:space-y-0">
+              <input
+                type="file"
+                accept="video/*"
+                ref={fileInputRef}
+                onChange={handleUpload}
+                className="hidden"
                 disabled={uploading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              />
+
+              <div className="flex flex-col items-center space-y-4">
+                <p className="text-gray-700 text-lg font-medium text-center">
+                  {uploading ? "Processing your video..." : "Click the microphone to upload your video"}
+                </p>
+
+                <motion.button
+                  type="submit"
+                  className="w-full max-w-xs bg-indigo-700 text-white py-3 px-6 rounded-full font-semibold hover:bg-indigo-800 disabled:opacity-50 transition-all shadow-md"
+                  disabled={uploading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {uploading ? "Analyzing..." : "Analyze Speech"}
+                </motion.button>
+              </div>
+
+              <motion.div
+                className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out
+                          ${uploading ? 'bg-gray-200 animate-pulse-slow' : 'bg-indigo-500 hover:bg-indigo-600 shadow-lg'}`}
+                onClick={handleMicrophoneClick}
+                whileHover={{ scale: uploading ? 1 : 1.05 }}
+                whileTap={{ scale: uploading ? 1 : 0.95 }}
+                title={uploading ? "Processing..." : "Click to upload video"}
               >
-                {uploading ? "Processing..." : "Analyze Speech"}
-              </motion.button>
+                <FaMicrophone className={`text-white text-5xl md:text-6xl ${uploading ? 'animate-bounce' : ''}`} />
+              </motion.div>
             </form>
+
             <AnimatePresence>
               {error && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="mt-4 p-4 bg-burgundy/10 text-burgundy rounded-lg"
+                  className="mt-4 p-4 bg-red-100 text-red-700 rounded-lg text-center"
                 >
                   {error}
                 </motion.div>
@@ -107,90 +226,167 @@ export default function Home() {
             </AnimatePresence>
           </motion.div>
 
+          {/* Analysis results section */}
           <AnimatePresence>
             {results && (
-              <motion.div 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="space-y-6"
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 50 }}
+                transition={{ duration: 0.8 }}
+                className="space-y-6 reveal w-full"
               >
-                <motion.div 
+                {/* Original Transcript */}
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="border-card border-lime bg-white p-6 reveal"
+                  transition={{ delay: 0.1 }}
+                  className="border-card border-green-500 bg-green-50 p-6 shadow-xl rounded-xl"
                 >
-                  <h3 className="font-display text-xl text-deepgreen mb-4">Transcript</h3>
-                  <p className="font-body text-blackbase leading-relaxed">{results.transcript}</p>
+                  <h3 className="font-display text-xl text-green-700 mb-4">Original Transcript</h3>
+                  <p className="font-body text-gray-800 leading-relaxed">{results.transcript}</p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <motion.div 
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="border-card border-gold bg-white p-6 float"
+                {/* Corrected Transcript with Highlights */}
+                {results.corrected_transcript && results.corrected_transcript !== results.transcript && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="border-card border-blue-500 bg-blue-50 p-6 shadow-xl rounded-xl"
                   >
-                    <h3 className="font-display text-lg text-deepgreen mb-2">Word Count</h3>
-                    <p className="text-3xl font-bold text-gold">{results.word_count}</p>
+                    <h3 className="font-display text-xl text-blue-700 mb-4">Corrected Transcript</h3>
+                    <p
+                      className="font-body text-gray-800 leading-relaxed grammar-highlight"
+                      dangerouslySetInnerHTML={{ __html: results.corrected_transcript }}
+                    />
+                    <style jsx global>{`
+                      .grammar-highlight c {
+                        background-color: #ffd700; /* Gold-like background for highlight */
+                        padding: 0 2px;
+                        border-radius: 3px;
+                        font-weight: bold;
+                        text-decoration: underline wavy #ff4500; /* OrangeRed underline for mistakes */
+                      }
+                      .grammar-highlight c:hover {
+                          cursor: help;
+                      }
+                    `}</style>
                   </motion.div>
+                )}
 
-                  <motion.div 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="border-card border-aqua bg-white p-6 reveal"
+                {/* Grammar Suggestions List */}
+                {results.grammar_mistakes && results.grammar_mistakes.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="border-card border-purple-500 bg-purple-50 p-6 shadow-xl rounded-xl"
                   >
-                    <h3 className="font-display text-lg text-deepgreen mb-2">Rate of Speech</h3>
-                    <div className="text-sm space-y-2">
-                      {results.rate_of_speech_points.map(([time, rate], index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="text-blackbase">{time.toFixed(1)}s:</span>
-                          <span className="font-medium text-blueaccent">{(rate * 60).toFixed(1)} words/min</span>
-                        </div>
+                    <h3 className="font-display text-xl text-purple-700 mb-4">Grammar Suggestions</h3>
+                    <ul className="list-disc pl-5 font-body text-gray-800 space-y-2">
+                      {results.grammar_mistakes.map((mistake, index) => (
+                        <li key={index}>
+                          "**{mistake[2]}**" should be "**{mistake[1]}**"
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </motion.div>
+                )}
 
-                  <motion.div 
+                {/* Grid for various analysis metrics */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Word Count */}
+                  <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="border-card border-mint bg-white p-6 reveal"
+                    transition={{ delay: 0.4 }}
+                    className="border-card border-yellow-500 bg-yellow-50 p-6 shadow-xl rounded-xl"
                   >
-                    <h3 className="font-display text-lg text-deepgreen mb-2">Volume Analysis</h3>
-                    <div className="relative h-32 mt-4">
-                      {Object.entries(results.volume_points).map(([time, volume], index) => {
-                        const leftPosition = (parseFloat(time) / Object.keys(results.volume_points).length) * 100;
-                        const heightPercent = volume * 100;
-                        return (
-                          <div 
-                            key={index}
-                            className="volume-bar"
-                            style={{
-                              height: `${heightPercent}%`,
-                              left: `${leftPosition}%`
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
+                    <h3 className="font-display text-lg text-yellow-700 mb-2">Word Count</h3>
+                    <p className="text-3xl font-bold text-yellow-600">{results.word_count}</p>
                   </motion.div>
 
-                  <motion.div 
+                  {/* Rate of Speech */}
+                 {/* Rate of Speech Chart */}
+<motion.div
+    initial={{ opacity: 0, x: 20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.5 }}
+    className="border-card border-teal-500 bg-teal-50 p-6 shadow-xl rounded-xl"
+>
+    <h3 className="font-display text-lg text-teal-700 mb-2">Rate of Speech (Words/Min)</h3>
+    <ResponsiveContainer width="100%" height={200}>
+        <LineChart data={results.rate_of_speech_points.map(([time, rate]) => ({
+            time: time.toFixed(1),
+            "Words/Min": (rate * 60).toFixed(1) // Convert to words per minute
+        }))}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e0f2f2" />
+            <XAxis dataKey="time" label={{ value: "Time (s)", position: "insideBottom", offset: -5 }} />
+            <YAxis label={{ value: "Words/Min", angle: -90, position: "insideLeft" }} />
+            <Tooltip
+                formatter={(value: any, name: string) => [`${value} ${name}`, `Time: ${name === "Words/Min" ? "" : name}s`]}
+                labelFormatter={(label: any) => `At ${label}s`}
+            />
+            <Legend />
+            <Line type="monotone" dataKey="Words/Min" stroke="#009688" activeDot={{ r: 8 }} />
+        </LineChart>
+    </ResponsiveContainer>
+</motion.div>
+
+                  {/* Volume Analysis */}
+           {/* Volume Analysis Chart */}
+<motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.6 }}
+    className="border-card border-orange-500 bg-orange-50 p-6 shadow-xl rounded-xl"
+>
+    <h3 className="font-display text-lg text-orange-700 mb-2">Volume Analysis</h3>
+    <ResponsiveContainer width="100%" height={200}>
+        <BarChart data={Object.entries(results.volume_points).map(([time, volume]) => ({
+            time: time,
+            Volume: Math.min(Math.max(volume * 100, 0), 100) // Scale to 0-100 for display
+        }))}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#ffe0b2" />
+            <XAxis dataKey="time" label={{ value: "Time Segment", position: "insideBottom", offset: -5 }} hide={true} /> {/* Hide X-axis labels if too many */}
+            <YAxis label={{ value: "Volume (%)", angle: -90, position: "insideLeft" }} />
+            <Tooltip />
+            <Legend />
+            <Bar dataKey="Volume" fill="#fb923c" />
+        </BarChart>
+    </ResponsiveContainer>
+</motion.div>
+
+                  {/* Tone Analysis */}
+                  <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className="border-card border-burgundy bg-white p-6 reveal"
+                    transition={{ delay: 0.7 }}
+                    className="border-card border-red-500 bg-red-50 p-6 shadow-xl rounded-xl"
                   >
-                    <h3 className="font-display text-lg text-deepgreen mb-2">Tone Analysis</h3>
+                    <h3 className="font-display text-lg text-red-700 mb-2">Tone Analysis (VADER)</h3>
                     <div className="space-y-3">
-                      {Object.entries(results.tone_scores).map(([tone, score], index) => (
+                      {/* Filtering common VADER keys for cleaner display */}
+                      {Object.entries(results.tone_scores)
+                        .filter(([tone]) => ['pos', 'neu', 'neg', 'compound'].includes(tone))
+                        .map(([tone, score], index) => (
                         <div key={index} className="space-y-1">
                           <div className="flex justify-between text-sm">
-                            <span className="capitalize text-blackbase">{tone}</span>
-                            <span className="font-medium text-burgundy">{(score * 100).toFixed(1)}%</span>
+                            <span className="capitalize text-gray-800">
+                              {tone === 'pos' ? 'Positive' : tone === 'neu' ? 'Neutral' : tone === 'neg' ? 'Negative' : 'Overall (Compound)'}
+                            </span>
+                            <span className="font-medium text-red-600">
+                              {(score * 100).toFixed(1)}%
+                            </span>
                           </div>
-                          <div className="w-full bg-cream rounded-full h-2">
-                            <div 
-                              className="progress-bar"
-                              style={{ width: `${score * 100}%` }}
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${(tone === 'compound' ? (score + 1) / 2 : score) * 100}%`, /* Compound score scaled to 0-100 */
+                                backgroundColor: tone === 'pos' ? '#4CAF50' : tone === 'neg' ? '#F44336' : '#9E9E9E'
+                              }}
                             />
                           </div>
                         </div>
@@ -199,26 +395,67 @@ export default function Home() {
                   </motion.div>
                 </div>
 
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="border-card border-deep bg-white p-6 reveal"
+                {/* Parts of Speech Analysis */}
+           {/* Parts of Speech Analysis Chart */}
+<motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.8 }}
+    className="border-card border-indigo-700 bg-indigo-50 p-6 shadow-xl rounded-xl"
+>
+    <h3 className="font-display text-lg text-indigo-700 mb-4">Parts of Speech Distribution</h3>
+    <div className="flex flex-col md:flex-row items-center justify-center">
+        <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+                <Pie
+                    data={Object.entries(results.parts_of_speech).map(([part, count]) => ({
+                        name: part.replace('_', ' '), // Clean up name for display
+                        value: count
+                    }))}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    animationBegin={0}
+                    animationDuration={800}
+                    animationEasing="ease-out"
                 >
-                  <h3 className="font-display text-lg text-deepgreen mb-4">Parts of Speech</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(results.parts_of_speech).map(([part, count], index) => (
-                      <div key={index} className="flex justify-between items-center p-2 bg-mintgreen rounded-lg">
-                        <span className="capitalize text-blackbase">{part.replace('_', ' ')}</span>
-                        <span className="font-medium text-deepgreen">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
+                    {
+                        Object.entries(results.parts_of_speech).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} /> // Dynamic colors
+                        ))
+                    }
+                </Pie>
+                <Tooltip />
+                <Legend layout="vertical" align="right" verticalAlign="middle" />
+            </PieChart>
+        </ResponsiveContainer>
+    </div>
+</motion.div>
+
+                {/* Analyze Another Video button */}
+                <div className="text-center mt-8">
+                  <motion.button
+                    onClick={() => { setResults(null); setError(""); }}
+                    className="inline-block bg-indigo-700 text-white px-8 py-4 rounded-full hover:bg-indigo-800 transition-colors duration-300 ease-in-out text-lg font-semibold shadow-md"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Analyze Another Video
+                  </motion.button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
       </main>
+
+      <footer className="w-full max-w-6xl mx-auto text-center py-8 text-white text-sm">
+        &copy; {new Date().getFullYear()} Speech Analyzer. All rights reserved.
+      </footer>
     </div>
   );
 }
