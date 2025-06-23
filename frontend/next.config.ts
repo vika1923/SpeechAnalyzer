@@ -3,17 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  images: {
+    domains: ['api.fontshare.com'],
+  },
   webpack: (config) => {
     config.module.rules.push({
-      test: /\.(mp4|webm)$/,
-      use: {
-        loader: 'file-loader',
-        options: {
-          publicPath: '/_next/static/',
-          outputPath: 'static/',
-          name: '[name].[hash].[ext]',
-        },
-      },
+      test: /\.css$/,
+      use: ['style-loader', 'css-loader', 'postcss-loader'],
     });
     return config;
   },

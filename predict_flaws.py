@@ -1,4 +1,5 @@
 import numpy as np
+<<<<<<< HEAD
 from typing import List, Dict
 from custom_types import TimeStamp, WordBoundary
 
@@ -24,5 +25,3 @@ def floss(indices: Dict[TimeStamp, WordBoundary], threshhold: float = 1.0) -> Li
 #         if mask_value
 #     }
 #     return filtered_timestamped_transcipt
-    
-
