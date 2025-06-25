@@ -41,3 +41,5 @@ def convert_video_to_wav(video_path: str) -> Optional[str]:
     except Exception as e:
         logging.error(f"Error converting video to WAV: {e}")
         return None
+
+# convert_video_to_wav(video_path="videos/scream.mp4")

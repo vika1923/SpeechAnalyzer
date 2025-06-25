@@ -14,17 +14,24 @@ def get_rms_per_segment(audio_location: str, segment_duration_sec: float=2):
 
     results = []
 
+    first_sample = None
+
     for i in range(num_segments):
         start = i * segment_samples
         end = start + segment_samples
         segment = data[start:end]
         rms = np.sqrt(np.mean(segment**2))
+        if i == 0:
+            first_sample = rms.item() if rms.item() != 0 else 1e-8  # avoid division by zero
         timestamp = i * segment_duration_sec
-        results.append((timestamp, rms.item()))
+        normalized_rms = rms.item() / first_sample if first_sample else 0.0
+        results.append((timestamp, normalized_rms))
+    
+    print("RESULTS FROM READVOLUMEPY:", results)
 
     return results
 
-# path = "video_audios/volumecheck.wav"
+# path = "video_audios/scream.wav"
 # segments = get_rms_per_segment(audio_location=path, segment_duration_sec=3)
 
 # print(*segments, sep="\n")
