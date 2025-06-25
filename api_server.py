@@ -137,7 +137,7 @@ async def upload_video(file: UploadFile = File(...)):
         
         # Combine words into a single unpunctuated string
         # FIX: Changed 'timestamped_transcript_by_items' to 'timestamped_transcript_by_words'
-        full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words)
+        full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words.items())
         
         # Add punctuation to the full text
         full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
@@ -161,7 +161,8 @@ async def upload_video(file: UploadFile = File(...)):
         rate_of_speech_points = rate_of_speech.get_rate_of_speech(timestamped_transcript_by_words)
         
         # Get volume (RMS) points over time
-        volume_points = read_volume.get_rms_per_segment(audio_path)
+        volume_points_list = read_volume.get_rms_per_segment(audio_path)
+        volume_points = {str(ts): float(rms) for ts, rms in volume_points_list}
         
         # Analyze tone using VADER
         tone_scores = tone_analyzer.analyze_tone(full_text)

@@ -287,7 +287,7 @@ export default function App() {
                     <ul className="list-disc pl-5 font-body text-gray-800 space-y-2">
                       {results.grammar_mistakes.map((mistake, index) => (
                         <li key={index}>
-                          "**{mistake[2]}**" should be "**{mistake[1]}**"
+                          "**{mistake[0][2]}**" should be "**{mistake[0][1]}**"
                         </li>
                       ))}
                     </ul>
