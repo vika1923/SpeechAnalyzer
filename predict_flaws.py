@@ -1,5 +1,5 @@
 import numpy as np
-<<<<<<< HEAD
+
 from typing import List, Dict
 from custom_types import TimeStamp, WordBoundary
 
