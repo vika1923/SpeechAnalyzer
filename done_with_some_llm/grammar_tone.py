@@ -1,9 +1,10 @@
 import requests
+import os
 # import rotateapikeys
 
 # 2. assess the text on scale from 1 to 10 for the following categories: confident, assertive, inspirational, informative, direct.
 
-API_KEY = "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"
+API_KEY = os.getenv("OR_API_KEY")
 print(API_KEY)
 
 almaz = "meta-llama/llama-4-maverick:free"
