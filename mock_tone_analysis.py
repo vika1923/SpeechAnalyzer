@@ -1,2 +1,0 @@
-def get_tone(text):
-    return {'overall tones:': [[0.6245859471985241, 'annoyed', '😒'], [0.23242445676563112, 'neutral', '😐'], [0.1429895960358448, 'disappointed', '😞']], 'other detected tones:': {'admiring': 6, 'aware': 1, 'confused': 4, 'curious': 5, 'disapproving': 2}}

@@ -56,6 +56,7 @@ def fix_grammar(prompt, model=almaz):
 
     response = requests.post(url, headers=headers, json=payload)
     data = response.json()
+    print("corrected with llama in grammar_tone")
 
     try:
         return data["choices"][0]["message"]["content"]
