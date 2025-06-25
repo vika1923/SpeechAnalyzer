@@ -45,6 +45,8 @@ def get_corrected_text(influent_sentences: list[str]) -> list[str]:
     for influent_sentence in influent_sentences:
         # Correct the sentence, getting only one candidate for simplicity
         corrected_candidates = gf.correct(influent_sentence, max_candidates=1)
+        if corrected_candidates is None:
+            raise Exception("corrected_candidates is None in Grammar correction helper function")
         for corrected_sentence in corrected_candidates:
             # Highlight the differences between original and corrected sentences
             # The output will include tags like <c orig_tok="original" edit="corrected">original</c>
@@ -115,7 +117,8 @@ async def upload_video(file: UploadFile = File(...)):
     """
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True) # Ensure the directory exists
-
+    if file.filename is None:
+        raise Exception("Filename is None in api/upload")
     file_path = os.path.join(upload_dir, file.filename)
     audio_path = None # Initialize audio_path to None for cleanup in finally block
 
@@ -137,7 +140,7 @@ async def upload_video(file: UploadFile = File(...)):
         
         # Combine words into a single unpunctuated string
         # FIX: Changed 'timestamped_transcript_by_items' to 'timestamped_transcript_by_words'
-        full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words)
+        full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words.items())
         
         # Add punctuation to the full text
         full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
