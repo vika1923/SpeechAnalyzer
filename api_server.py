@@ -48,6 +48,7 @@ def get_corrected_text(influent_sentences: list[str]) -> list[str]:
             # Highlight the differences between original and corrected sentences
             # The output will include tags like <c orig_tok="original" edit="corrected">original</c>
             edited_sentences.append(gf.highlight(influent_sentence, corrected_sentence))
+    print("corrected with gramformer in api_server")
     return edited_sentences
 
 def get_parsed_corrections(highlighted_sentences: list[str]) -> list[tuple[tuple[int, int], str]]:
