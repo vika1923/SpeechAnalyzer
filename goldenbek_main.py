@@ -15,7 +15,7 @@ import rate_of_speech
 import tone_analyzer
 from gramformer import Gramformer
 
-import custom_tone_analyzer
+from done_with_some_llm.sapling import get_tone
 import os
 import sys
 # from custom_types import TimeStamp
@@ -60,9 +60,10 @@ for i, (segment, scores) in enumerate(segments, 1):
     print(f"Compound Score: {scores['compound']:.2f}")
 
 # Analyze tones using custom rule-based analyzer (Grammarly-like)
-custom_tone_results = custom_tone_analyzer.analyze_tones(sample_text)
-print("\nGrammarly-like Tone Analysis:")
-custom_tone_analyzer.print_tone_results(custom_tone_results)
+custom_tone_results = get_tone(sample_text)
+print("\nSapling Tone Analysis:")
+for score, label, emoji in custom_tone_results:
+    print(f"{emoji} {label}: {score:.2%}")
 
 # Convert video to WAV
 audio_path = video_to_vaw.convert_video_to_wav("videos/IMG_1551.mp4")

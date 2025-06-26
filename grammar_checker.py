@@ -11,6 +11,7 @@ def get_corrected_text(influent_sentences):
         corrected_sentences = gf.correct(influent_sentence, max_candidates=1)
         for corrected_sentence in corrected_sentences:
             edited_sentences.append(gf.highlight(influent_sentence, corrected_sentence))
+    print("corrected with gramformer in grammar_checker")
     return edited_sentences
 
 def get_parsed_corrections(corrected_sentences):
