@@ -1,11 +1,12 @@
 import subprocess 
 import polars as pl
 
-def extract_video(file_path, out_dir): 
+def extract_video(file_path, out_dir, file_name = "video"): 
     subprocess.run([
         'openFace/OpenFace/build/bin/FeatureExtraction',
         '-f', file_path,
         '-out_dir', out_dir,
+        '-of', file_name, 
         '-gaze',
         '-aus'
     ])
@@ -32,6 +33,7 @@ def get_gaze_and_aus(file_path):
         result[col] = diff_sum
 
     return result
+
 def get_all_aus_sum(dick):
     sum = 0
     for key, value in dick.items():
@@ -39,10 +41,10 @@ def get_all_aus_sum(dick):
             sum += value
     return sum
 
+def return_numbers(file_path):
+    temp_dir = "videos/openface"
+    extract_video(file_path, temp_dir)
+    out = get_gaze_and_aus(temp_dir+"/video.csv")
+    return out['gaze_angle_x'], out['gaze_angle_x'], get_all_aus_sum(out)
 
-if __name__ == "__main__":
-    n = 4
-    # extract_video('videos/IMG_2783.mov', f'videos/try{n}')
-    print(get_all_aus_sum(get_gaze_and_aus(f'videos/try{n}/IMG_2783.csv')))
-    print(get_all_aus_sum(get_gaze_and_aus(f'videos/try3/Vika.csv')))
-    
+
