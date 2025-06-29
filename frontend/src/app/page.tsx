@@ -31,7 +31,7 @@ import {
  * - [0]: [start_index_in_highlighted_string, end_index_in_highlighted_string]
  * - [1]: The suggested correction string.
  * - [2]: The original incorrect word/phrase as captured by the tag content.
- * @property {Record<string, number>} [custom_tone_results] - Optional: results for custom tone analysis.
+ *  @property {[number, string, string][]} [custom_tone_results] - Optional: results for custom tone analysis.
  */
 interface AnalysisResults {
   transcript: string;
@@ -39,10 +39,10 @@ interface AnalysisResults {
   word_count: number;
   rate_of_speech_points: [number, number][];
   volume_points: Record<string, number>;
-  tone_scores: Record<string, number>;
+  tone_scores?: Record<string, number>;
   parts_of_speech: Record<string, number>;
-  grammar_mistakes: [[[number, number], string, string]][]; // Updated type for grammar_mistakes
-  custom_tone_results?: Record<string, number>;
+  grammar_mistakes: [[number, number], string, string][];
+  custom_tone_results: [number, string, string][];
 }
 
 /**
@@ -285,11 +285,14 @@ export default function App() {
                   >
                     <h3 className="font-display text-xl text-purple-700 mb-4">Grammar Suggestions</h3>
                     <ul className="list-disc pl-5 font-body text-gray-800 space-y-2">
-                      {results.grammar_mistakes.map((mistake, index) => (
-                        <li key={index}>
-                          "**{mistake[0][2]}**" should be "**{mistake[0][1]}**"
-                        </li>
-                      ))}
+                      {results.grammar_mistakes.map((mistake, index) => {
+                        const [range, suggestion, original] = mistake;
+                        return (
+                          <li key={index}>
+                            "{original}" should be "{suggestion}"
+                          </li>
+                        );
+                      })}
                     </ul>
                   </motion.div>
                 )}
@@ -358,41 +361,26 @@ export default function App() {
     </ResponsiveContainer>
 </motion.div>
 
-                  {/* Tone Analysis */}
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.7 }}
-                    className="border-card border-red-500 bg-red-50 p-6 shadow-xl rounded-xl"
-                  >
-                    <h3 className="font-display text-lg text-red-700 mb-2">Tone Analysis (VADER)</h3>
-                    <div className="space-y-3">
-                      {/* Filtering common VADER keys for cleaner display */}
-                      {Object.entries(results.tone_scores)
-                        .filter(([tone]) => ['pos', 'neu', 'neg', 'compound'].includes(tone))
-                        .map(([tone, score], index) => (
-                        <div key={index} className="space-y-1">
-                          <div className="flex justify-between text-sm">
-                            <span className="capitalize text-gray-800">
-                              {tone === 'pos' ? 'Positive' : tone === 'neu' ? 'Neutral' : tone === 'neg' ? 'Negative' : 'Overall (Compound)'}
-                            </span>
-                            <span className="font-medium text-red-600">
-                              {(score * 100).toFixed(1)}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="h-full rounded-full"
-                              style={{
-                                width: `${(tone === 'compound' ? (score + 1) / 2 : score) * 100}%`, /* Compound score scaled to 0-100 */
-                                backgroundColor: tone === 'pos' ? '#4CAF50' : tone === 'neg' ? '#F44336' : '#9E9E9E'
-                              }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </motion.div>
+                  {/* Tone Analysis (Custom Tone Results) */}
+                  {results.custom_tone_results && results.custom_tone_results.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.7 }}
+                      className="border-card border-red-500 bg-red-50 p-6 shadow-xl rounded-xl"
+                    >
+                      <h3 className="font-display text-lg text-red-700 mb-2">Tone Analysis</h3>
+                      <ul className="space-y-2">
+                        {results.custom_tone_results.map(([score, label, emoji], idx) => (
+                          <li key={idx} className="flex items-center space-x-2">
+                            <span className="text-2xl">{emoji}</span>
+                            <span className="font-medium text-gray-800">{label}</span>
+                            <span className="ml-auto font-semibold text-red-600">{(score * 100).toFixed(1)}%</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </motion.div>
+                  )}
                 </div>
 
                 {/* Parts of Speech Analysis */}
@@ -418,7 +406,7 @@ export default function App() {
                     fill="#8884d8"
                     dataKey="value"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     animationBegin={0}
                     animationDuration={800}
                     animationEasing="ease-out"

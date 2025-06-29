@@ -9,9 +9,15 @@ import insert_punctuation
 import parts_of_speech
 import read_volume
 import rate_of_speech
+<<<<<<< HEAD
 import tone_analyzer
 import custom_tone_analyzer
 from gramformer import Gramformer # type: ignore
+=======
+from done_with_some_llm import grammar_tone, sapling
+from gramformer import Gramformer # Import Gramformer
+
+>>>>>>> a3504f0afaacb0d9bf5b10dc0f7903f4c0c1f10f
 # Initialize Gramformer globally
 # models=1 for corrector (default), models=2 for detector
 # use_gpu=True if you have a compatible GPU and PyTorch is configured for it
@@ -50,6 +56,8 @@ def get_corrected_text(influent_sentences: list[str]) -> list[str]:
             # Highlight the differences between original and corrected sentences
             # The output will include tags like <c orig_tok="original" edit="corrected">original</c>
             edited_sentences.append(gf.highlight(influent_sentence, corrected_sentence))
+    print("corrected with gramformer in api_server")
+    print(edited_sentences)
     return edited_sentences
 
 def get_parsed_corrections(highlighted_sentences: list[str]) -> list[tuple[tuple[int, int], str]]:
@@ -166,11 +174,11 @@ async def upload_video(file: UploadFile = File(...)):
         volume_points_list = read_volume.get_rms_per_segment(audio_path)
         volume_points = {str(ts): float(rms) for ts, rms in volume_points_list}
         
-        # Analyze tone using VADER
-        tone_scores = tone_analyzer.analyze_tone(full_text)
-        
-        # Analyze custom tones (Grammarly-like)
-        custom_tone_results = custom_tone_analyzer.analyze_tones(full_text)
+        # Analyze tone (VADER-like, legacy)
+        tone_scores = sapling.get_tone(full_text)  # This is now a list of lists: [[number, string, string], ...]
+
+        # Analyze custom tones (Grammarly-like, now using Sapling)
+        custom_tone_results = sapling.get_tone(full_text)
 
         # Return all analysis results as JSON
         return JSONResponse(content={
@@ -178,7 +186,7 @@ async def upload_video(file: UploadFile = File(...)):
             "parts_of_speech": parts_of_speech_dict,
             "rate_of_speech_points": rate_of_speech_points,
             "volume_points": volume_points,
-            "tone_scores": tone_scores,
+            "tone_scores": {},  # Deprecated, kept for backward compatibility
             "custom_tone_results": custom_tone_results,
             "transcript": full_text,
             "corrected_transcript": corrected_transcript_with_highlights, # Send the highlighted text
