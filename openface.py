@@ -32,9 +32,17 @@ def get_gaze_and_aus(file_path):
         result[col] = diff_sum
 
     return result
+def get_all_aus_sum(dick):
+    sum = 0
+    for key, value in dick.items():
+        if "AU" in key:
+            sum += value
+    return sum
+
 
 if __name__ == "__main__":
-    n = 3
-    extract_video('videos/Vika.mov', f'videos/try{n}')
-    print(get_gaze_and_aus(f'videos/try{n}/Vika.csv'))
+    n = 4
+    # extract_video('videos/IMG_2783.mov', f'videos/try{n}')
+    print(get_all_aus_sum(get_gaze_and_aus(f'videos/try{n}/IMG_2783.csv')))
+    print(get_all_aus_sum(get_gaze_and_aus(f'videos/try3/Vika.csv')))
     
