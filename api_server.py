@@ -9,15 +9,9 @@ import insert_punctuation
 import parts_of_speech
 import read_volume
 import rate_of_speech
-<<<<<<< HEAD
-import tone_analyzer
-import custom_tone_analyzer
-from gramformer import Gramformer # type: ignore
-=======
 from done_with_some_llm import grammar_tone, sapling
 from gramformer import Gramformer # Import Gramformer
 
->>>>>>> a3504f0afaacb0d9bf5b10dc0f7903f4c0c1f10f
 # Initialize Gramformer globally
 # models=1 for corrector (default), models=2 for detector
 # use_gpu=True if you have a compatible GPU and PyTorch is configured for it
