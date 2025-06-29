@@ -6,6 +6,7 @@ reportlab
 moviepy==1.0.3
 deepmultilingualpunctuation
 nltk
+polars
 scipy
 librosa
 git+https://github.com/PrithivirajDamodaran/Gramformer.git  # Gramformer. for grammar_checker

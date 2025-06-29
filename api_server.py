@@ -1,5 +1,5 @@
-from fastapi import FastAPI, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, File, UploadFile # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from fastapi.responses import JSONResponse # type: ignore
 import os
 import shutil
@@ -11,8 +11,7 @@ import read_volume
 import rate_of_speech
 import tone_analyzer
 import custom_tone_analyzer
-from gramformer import Gramformer # Import Gramformer
-
+from gramformer import Gramformer # type: ignore
 # Initialize Gramformer globally
 # models=1 for corrector (default), models=2 for detector
 # use_gpu=True if you have a compatible GPU and PyTorch is configured for it
