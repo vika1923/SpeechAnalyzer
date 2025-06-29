@@ -1,5 +1,5 @@
-from fastapi import FastAPI, File, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, File, UploadFile # type: ignore
+from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from fastapi.responses import JSONResponse # type: ignore
 import os
 import shutil
@@ -51,6 +51,7 @@ def get_corrected_text(influent_sentences: list[str]) -> list[str]:
             # The output will include tags like <c orig_tok="original" edit="corrected">original</c>
             edited_sentences.append(gf.highlight(influent_sentence, corrected_sentence))
     print("corrected with gramformer in api_server")
+    print(edited_sentences)
     return edited_sentences
 
 def get_parsed_corrections(highlighted_sentences: list[str]) -> list[tuple[tuple[int, int], str]]:
