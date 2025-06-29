@@ -173,18 +173,13 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-<<<<<<< HEAD
 .DS_Store
-=======
->>>>>>> origin/main
 
 videos/*
 video_audios/*
 graphs/*
 pdfs/*
 .env
-<<<<<<< HEAD
-=======
 
 # Node.js
 node_modules/
@@ -203,4 +198,3 @@ dist/
 *.local
 node_modules/
 node_modules/
->>>>>>> origin/main
