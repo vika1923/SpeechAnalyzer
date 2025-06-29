@@ -27,7 +27,7 @@ def get_rms_per_segment(audio_location: str, segment_duration_sec: float=2):
         normalized_rms = rms.item() / first_sample if first_sample else 0.0
         results.append((timestamp, normalized_rms))
     
-    print("RESULTS FROM READVOLUMEPY:", results)
+    # print("RESULTS FROM READVOLUMEPY:", results)
 
     return results
 
