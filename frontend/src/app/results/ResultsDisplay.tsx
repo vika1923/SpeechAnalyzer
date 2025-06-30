@@ -16,6 +16,10 @@ interface AnalysisResults {
   parts_of_speech: Record<string, number>;
   grammar_mistakes: [[number, number], string, string][];
   custom_tone_results: [number, string, string][];
+  hand_position_results: string;
+  gaze_angle_x?: number;
+  gaze_angle_y?: number;
+  all_aus_sum?: number;
 }
 
 export default function ResultsDisplay({ results }: { results: AnalysisResults }) {
@@ -49,7 +53,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
           <h3 className="font-display text-xl text-blue-700 mb-4">Corrected Transcript</h3>
           <p
             className="font-body text-gray-800 leading-relaxed grammar-highlight"
-            dangerouslySetInnerHTML={{ __html: results.corrected_transcript }}
+            dangerouslySetInnerHTML={{ __html: results.corrected_transcript.replace(/<c>/g, '<c>').replace(/<\/c>/g, '</c>') }}
           />
           <style jsx global>{`
             .grammar-highlight c {
@@ -210,6 +214,34 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
                   </PieChart>
               </ResponsiveContainer>
           </div>
+      </motion.div>
+
+      {/* Hand Position Analysis */}
+      {results.hand_position_results && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+          className="border-card border-gray-500 bg-gray-50 p-6 shadow-xl rounded-xl"
+        >
+          <h3 className="font-display text-xl text-gray-700 mb-4">Hand Position Analysis</h3>
+          <pre className="font-mono text-sm text-gray-800 whitespace-pre-wrap">{results.hand_position_results}</pre>
+        </motion.div>
+      )}
+
+      {/* OpenFace Gaze & AU Analysis */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.0 }}
+        className="border-card border-pink-500 bg-pink-50 p-6 shadow-xl rounded-xl"
+      >
+        <h3 className="font-display text-xl text-pink-700 mb-4">OpenFace Gaze & AU Analysis</h3>
+        <div className="font-body text-gray-800 space-y-2">
+          <div><span className="font-semibold">Gaze Angle X:</span> {results.gaze_angle_x?.toFixed(3)}</div>
+          <div><span className="font-semibold">Gaze Angle Y:</span> {results.gaze_angle_y?.toFixed(3)}</div>
+          <div><span className="font-semibold">Sum of All AU Diffs:</span> {results.all_aus_sum?.toFixed(3)}</div>
+        </div>
       </motion.div>
     </motion.div>
   );

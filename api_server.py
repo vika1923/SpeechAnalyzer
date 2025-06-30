@@ -12,6 +12,8 @@ import read_volume
 import rate_of_speech
 from done_with_some_llm import grammar_tone, sapling
 from gramformer import Gramformer # Import Gramformer
+import pose_tracking
+import openface
 
 # Initialize Gramformer globally
 # models=1 for corrector (default), models=2 for detector
@@ -45,80 +47,21 @@ app.add_middleware(
 )
 
 # --- Grammar Correction Helper Functions ---
-def get_corrected_text(influent_sentences: list[str]) -> list[str]:
+# Remove Gramformer and related functions
+
+def get_grammar_corrections(text: str):
     """
-    Corrects a list of sentences using Gramformer and highlights changes.
-    Returns a list of corrected sentences, with diffs highlighted using <c> tags.
+    Uses get_mistakes_and_text from grammar_tone.py to return mistakes, corrected text, and highlight spans.
     """
-    logger.info("get_corrected_text called")
-    edited_sentences = []
-    for influent_sentence in influent_sentences:
-        # Correct the sentence, getting only one candidate for simplicity
-        corrected_candidates = gf.correct(influent_sentence, max_candidates=1)
-        if corrected_candidates is None:
-            raise Exception("corrected_candidates is None in Grammar correction helper function")
-        for corrected_sentence in corrected_candidates:
-            # Highlight the differences between original and corrected sentences
-            # The output will include tags like <c orig_tok="original" edit="corrected">original</c>
-            edited_sentences.append(gf.highlight(influent_sentence, corrected_sentence))
-    print("corrected with gramformer in api_server")
-    print(edited_sentences)
-    return edited_sentences
-
-def get_parsed_corrections(highlighted_sentences: list[str]) -> list[tuple[tuple[int, int], str]]:
-    """
-    Parses sentences highlighted by Gramformer to extract mistake details.
-    Each mistake is returned as ((start_index_in_highlighted_string, end_index_in_highlighted_string), suggested_correction).
-    """
-    logger.info("get_parsed_corrections called")
-    mistake_details = []
-    for highlighted_sentence in highlighted_sentences:
-        current_idx = 0
-        while True:
-            # Find the start of a correction tag: <c
-            tag_start = highlighted_sentence.find('<c', current_idx)
-            if tag_start == -1:
-                break # No more tags found
-
-            # Find the end of the opening tag's attributes and content: >
-            tag_content_start = highlighted_sentence.find('>', tag_start)
-            if tag_content_start == -1: # Malformed tag
-                current_idx = tag_start + 1
-                continue
-
-            # Find the closing tag: </c>
-            closing_tag_start = highlighted_sentence.find('</c>', tag_content_start)
-            if closing_tag_start == -1: # Malformed tag
-                current_idx = tag_start + 1
-                continue
-
-            # The "incorrect word" is the content *between* the opening '>' and '</c>'
-            incorrect_word_in_tag = highlighted_sentence[tag_content_start + 1:closing_tag_start]
-
-            # Extract the 'edit' attribute value
-            edit_attr_search_start = tag_start # Search for 'edit=' within the opening tag
-            edit_attr_value_start_quote_idx = highlighted_sentence.find("edit='", edit_attr_search_start, tag_content_start)
-
-            correction_text = ""
-            if edit_attr_value_start_quote_idx != -1:
-                edit_value_start_idx = edit_attr_value_start_quote_idx + len("edit='")
-                edit_value_end_quote_idx = highlighted_sentence.find("'", edit_value_start_idx)
-                if edit_value_end_quote_idx != -1:
-                    correction_text = highlighted_sentence[edit_value_start_idx:edit_value_end_quote_idx]
-            
-            # The indices returned here are for the highlighted string itself,
-            # as Gramformer's highlight method embeds tags directly.
-            # If you need mapping to the *original* unhighlighted text,
-            # more complex string manipulation (like tokenization and index mapping)
-            # would be required before/after Gramformer.
-            mistake_details.append(
-                ((tag_start, closing_tag_start + 3), correction_text, incorrect_word_in_tag) # (indices in highlighted string, correction, original_word_in_tag)
-            )
-
-            # Move past the current closing tag for the next search
-            current_idx = closing_tag_start + len('</c>')
-
-    return mistake_details
+    logger.info("get_grammar_corrections called")
+    mistakes_lines, corrected_text, correction_spans = grammar_tone.get_mistakes_and_text(text)
+    if mistakes_lines is None:
+        mistakes_lines = []
+    if corrected_text is None:
+        corrected_text = text
+    if correction_spans is None:
+        correction_spans = []
+    return mistakes_lines, corrected_text, correction_spans
 
 # --- FastAPI Routes ---
 
@@ -159,17 +102,38 @@ async def upload_video(file: UploadFile = File(...)):
         # Add punctuation to the full text
         full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
         
-        # --- Grammar Correction ---
-        # Get corrected text with highlights
-        # Gramformer works best on complete sentences. If full_text is very long, 
-        # consider splitting it into sentences before passing to get_corrected_text.
-        corrected_highlighted_texts = get_corrected_text([full_text])
+        # --- Grammar Correction (now using grammar_tone.get_mistakes_and_text) ---
+        mistakes_lines, corrected_text, correction_spans = get_grammar_corrections(full_text)
         
-        # Parse mistakes from the highlighted text. Assumes only one sentence was processed.
-        grammar_mistakes = get_parsed_corrections(corrected_highlighted_texts)
+        # For highlighting, wrap the corrected spans in <c> tags
+        highlighted_text = corrected_text
+        # Sort spans in reverse order to avoid messing up indices
+        for start, end in sorted(correction_spans, reverse=True):
+            highlighted_text = (
+                highlighted_text[:start] +
+                f'<c>{highlighted_text[start:end]}</c>' +
+                highlighted_text[end:]
+            )
         
-        # The corrected transcript (with highlight tags)
-        corrected_transcript_with_highlights = corrected_highlighted_texts[0] if corrected_highlighted_texts else full_text
+        # Prepare grammar mistakes for frontend (list of [span, suggestion, original])
+        grammar_mistakes = []
+        for line in mistakes_lines:
+            if '"' in line and 'should be' in line:
+                try:
+                    first_quote = line.find('"')
+                    second_quote = line.find('"', first_quote + 1)
+                    incorrect_phrase = line[first_quote + 1:second_quote]
+                    should_be_idx = line.find("should be", second_quote)
+                    third_quote = line.find('"', should_be_idx)
+                    fourth_quote = line.find('"', third_quote + 1)
+                    correct_phrase = line[third_quote + 1:fourth_quote]
+                    grammar_mistakes.append([[start, end], correct_phrase, incorrect_phrase])
+                except Exception:
+                    continue
+            else:
+                grammar_mistakes.append([[0, 0], line, line])
+        
+        corrected_transcript_with_highlights = highlighted_text
 
         # Analyze parts of speech
         parts_of_speech_dict = parts_of_speech.parts_of_speech(full_text)
@@ -184,6 +148,13 @@ async def upload_video(file: UploadFile = File(...)):
         # Analyze custom tones (Grammarly-like, now using Sapling)
         custom_tone_results = sapling.get_tone(full_text)
 
+        # Analyze hand positions
+        hand_position_results_dict = pose_tracking.analyze_hand_positions(file_path)
+        hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
+
+        # OpenFace analysis
+        gaze_x, gaze_y, aus_sum = openface.return_numbers(file_path)
+
         # Return all analysis results as JSON
         return JSONResponse(content={
             "word_count": word_count,
@@ -195,6 +166,10 @@ async def upload_video(file: UploadFile = File(...)):
             "transcript": full_text,
             "corrected_transcript": corrected_transcript_with_highlights, # Send the highlighted text
             "grammar_mistakes": grammar_mistakes,                       # Send parsed mistakes
+            "hand_position_results": hand_position_results_text,
+            "gaze_angle_x": gaze_x,
+            "gaze_angle_y": gaze_y,
+            "all_aus_sum": aus_sum,
         })
     except Exception as e:
         # Log the error for debugging purposes (consider using a proper logging library like 'logging')
