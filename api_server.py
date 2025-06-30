@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from fastapi.responses import JSONResponse # type: ignore
 import os
 import shutil
+import logging
 import video_to_vaw
 import speech_to_text
 import insert_punctuation
@@ -16,6 +17,15 @@ from gramformer import Gramformer # Import Gramformer
 # models=1 for corrector (default), models=2 for detector
 # use_gpu=True if you have a compatible GPU and PyTorch is configured for it
 gf = Gramformer(models=1, use_gpu=False)
+
+# --- Logging Setup ---
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    filename='api_server.log',
+    filemode='a'
+)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -40,6 +50,7 @@ def get_corrected_text(influent_sentences: list[str]) -> list[str]:
     Corrects a list of sentences using Gramformer and highlights changes.
     Returns a list of corrected sentences, with diffs highlighted using <c> tags.
     """
+    logger.info("get_corrected_text called")
     edited_sentences = []
     for influent_sentence in influent_sentences:
         # Correct the sentence, getting only one candidate for simplicity
@@ -59,6 +70,7 @@ def get_parsed_corrections(highlighted_sentences: list[str]) -> list[tuple[tuple
     Parses sentences highlighted by Gramformer to extract mistake details.
     Each mistake is returned as ((start_index_in_highlighted_string, end_index_in_highlighted_string), suggested_correction).
     """
+    logger.info("get_parsed_corrections called")
     mistake_details = []
     for highlighted_sentence in highlighted_sentences:
         current_idx = 0
@@ -116,6 +128,7 @@ async def upload_video(file: UploadFile = File(...)):
     Handles video file uploads, processes them for speech analysis,
     and returns various metrics including grammar correction.
     """
+    logger.info(f"upload_video called with file: {file.filename}")
     upload_dir = "uploaded_videos"
     os.makedirs(upload_dir, exist_ok=True) # Ensure the directory exists
     if file.filename is None:
@@ -168,9 +181,6 @@ async def upload_video(file: UploadFile = File(...)):
         volume_points_list = read_volume.get_rms_per_segment(audio_path)
         volume_points = {str(ts): float(rms) for ts, rms in volume_points_list}
         
-        # Analyze tone (VADER-like, legacy)
-        tone_scores = sapling.get_tone(full_text)  # This is now a list of lists: [[number, string, string], ...]
-
         # Analyze custom tones (Grammarly-like, now using Sapling)
         custom_tone_results = sapling.get_tone(full_text)
 
@@ -180,7 +190,7 @@ async def upload_video(file: UploadFile = File(...)):
             "parts_of_speech": parts_of_speech_dict,
             "rate_of_speech_points": rate_of_speech_points,
             "volume_points": volume_points,
-            "tone_scores": {},  # Deprecated, kept for backward compatibility
+            "tone_scores": custom_tone_results,
             "custom_tone_results": custom_tone_results,
             "transcript": full_text,
             "corrected_transcript": corrected_transcript_with_highlights, # Send the highlighted text
@@ -188,7 +198,7 @@ async def upload_video(file: UploadFile = File(...)):
         })
     except Exception as e:
         # Log the error for debugging purposes (consider using a proper logging library like 'logging')
-        print(f"Error processing video: {e}")
+        logger.error(f"Error processing video: {e}", exc_info=True)
         return JSONResponse(status_code=500, content={"error": f"An error occurred during processing: {str(e)}"})
     finally:
         # Clean up temporary files
