@@ -10,12 +10,15 @@ import parts_of_speech
 import read_volume
 import rate_of_speech
 from done_with_some_llm import grammar_tone, sapling
-from gramformer import Gramformer # Import Gramformer
+import openface
+# Remove Gramformer import since we're using grammar_tone instead
+# from gramformer import Gramformer # Import Gramformer
 
+# Remove Gramformer initialization since we're using grammar_tone instead
 # Initialize Gramformer globally
 # models=1 for corrector (default), models=2 for detector
 # use_gpu=True if you have a compatible GPU and PyTorch is configured for it
-gf = Gramformer(models=1, use_gpu=False)
+# gf = Gramformer(models=1, use_gpu=False)
 
 app = FastAPI()
 
@@ -35,78 +38,31 @@ app.add_middleware(
 )
 
 # --- Grammar Correction Helper Functions ---
-def get_corrected_text(influent_sentences: list[str]) -> list[str]:
+# Remove the old Gramformer-based functions and replace with grammar_tone integration
+def process_grammar_correction(text_to_check: str):
     """
-    Corrects a list of sentences using Gramformer and highlights changes.
-    Returns a list of corrected sentences, with diffs highlighted using <c> tags.
+    Uses the get_mistakes_and_text function from grammar_tone.py to process grammar correction.
+    Returns (mistakes_list, corrected_text, correction_spans).
     """
-    edited_sentences = []
-    for influent_sentence in influent_sentences:
-        # Correct the sentence, getting only one candidate for simplicity
-        corrected_candidates = gf.correct(influent_sentence, max_candidates=1)
-        if corrected_candidates is None:
-            raise Exception("corrected_candidates is None in Grammar correction helper function")
-        for corrected_sentence in corrected_candidates:
-            # Highlight the differences between original and corrected sentences
-            # The output will include tags like <c orig_tok="original" edit="corrected">original</c>
-            edited_sentences.append(gf.highlight(influent_sentence, corrected_sentence))
-    print("corrected with gramformer in api_server")
-    print(edited_sentences)
-    return edited_sentences
-
-def get_parsed_corrections(highlighted_sentences: list[str]) -> list[tuple[tuple[int, int], str]]:
-    """
-    Parses sentences highlighted by Gramformer to extract mistake details.
-    Each mistake is returned as ((start_index_in_highlighted_string, end_index_in_highlighted_string), suggested_correction).
-    """
-    mistake_details = []
-    for highlighted_sentence in highlighted_sentences:
-        current_idx = 0
-        while True:
-            # Find the start of a correction tag: <c
-            tag_start = highlighted_sentence.find('<c', current_idx)
-            if tag_start == -1:
-                break # No more tags found
-
-            # Find the end of the opening tag's attributes and content: >
-            tag_content_start = highlighted_sentence.find('>', tag_start)
-            if tag_content_start == -1: # Malformed tag
-                current_idx = tag_start + 1
-                continue
-
-            # Find the closing tag: </c>
-            closing_tag_start = highlighted_sentence.find('</c>', tag_content_start)
-            if closing_tag_start == -1: # Malformed tag
-                current_idx = tag_start + 1
-                continue
-
-            # The "incorrect word" is the content *between* the opening '>' and '</c>'
-            incorrect_word_in_tag = highlighted_sentence[tag_content_start + 1:closing_tag_start]
-
-            # Extract the 'edit' attribute value
-            edit_attr_search_start = tag_start # Search for 'edit=' within the opening tag
-            edit_attr_value_start_quote_idx = highlighted_sentence.find("edit='", edit_attr_search_start, tag_content_start)
-
-            correction_text = ""
-            if edit_attr_value_start_quote_idx != -1:
-                edit_value_start_idx = edit_attr_value_start_quote_idx + len("edit='")
-                edit_value_end_quote_idx = highlighted_sentence.find("'", edit_value_start_idx)
-                if edit_value_end_quote_idx != -1:
-                    correction_text = highlighted_sentence[edit_value_start_idx:edit_value_end_quote_idx]
-            
-            # The indices returned here are for the highlighted string itself,
-            # as Gramformer's highlight method embeds tags directly.
-            # If you need mapping to the *original* unhighlighted text,
-            # more complex string manipulation (like tokenization and index mapping)
-            # would be required before/after Gramformer.
-            mistake_details.append(
-                ((tag_start, closing_tag_start + 3), correction_text, incorrect_word_in_tag) # (indices in highlighted string, correction, original_word_in_tag)
-            )
-
-            # Move past the current closing tag for the next search
-            current_idx = closing_tag_start + len('</c>')
-
-    return mistake_details
+    result = grammar_tone.get_mistakes_and_text(text_to_check)
+    if result is None or len(result) < 3:
+        # If no mistakes found or error occurred, return empty list and original text
+        return [], text_to_check, []
+    mistakes_lines, corrected_text, correction_spans = result
+    
+    # Filter out empty lines and clean up the mistakes
+    cleaned_mistakes = []
+    for mistake in mistakes_lines:
+        mistake = mistake.strip()
+        if mistake and mistake != "No corrections needed":
+            cleaned_mistakes.append(mistake)
+    
+    print("corrected with grammar_tone in api_server")
+    print(f"Mistakes found: {len(cleaned_mistakes)}")
+    print(f"Corrected text: {corrected_text}")
+    print(f"Correction spans: {correction_spans}")
+    
+    return cleaned_mistakes, corrected_text, correction_spans
 
 # --- FastAPI Routes ---
 
@@ -146,17 +102,8 @@ async def upload_video(file: UploadFile = File(...)):
         # Add punctuation to the full text
         full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
         
-        # --- Grammar Correction ---
-        # Get corrected text with highlights
-        # Gramformer works best on complete sentences. If full_text is very long, 
-        # consider splitting it into sentences before passing to get_corrected_text.
-        corrected_highlighted_texts = get_corrected_text([full_text])
-        
-        # Parse mistakes from the highlighted text. Assumes only one sentence was processed.
-        grammar_mistakes = get_parsed_corrections(corrected_highlighted_texts)
-        
-        # The corrected transcript (with highlight tags)
-        corrected_transcript_with_highlights = corrected_highlighted_texts[0] if corrected_highlighted_texts else full_text
+        # --- Grammar Correction using grammar_tone ---
+        grammar_mistakes, corrected_text, correction_spans = process_grammar_correction(full_text)
 
         # Analyze parts of speech
         parts_of_speech_dict = parts_of_speech.parts_of_speech(full_text)
@@ -174,6 +121,8 @@ async def upload_video(file: UploadFile = File(...)):
         # Analyze custom tones (Grammarly-like, now using Sapling)
         custom_tone_results = sapling.get_tone(full_text)
 
+        gaze_x, gaze_y, mimics = openface.return_numbers(file_path)
+
         # Return all analysis results as JSON
         return JSONResponse(content={
             "word_count": word_count,
@@ -183,8 +132,12 @@ async def upload_video(file: UploadFile = File(...)):
             "tone_scores": {},  # Deprecated, kept for backward compatibility
             "custom_tone_results": custom_tone_results,
             "transcript": full_text,
-            "corrected_transcript": corrected_transcript_with_highlights, # Send the highlighted text
-            "grammar_mistakes": grammar_mistakes,                       # Send parsed mistakes
+            "corrected_transcript": corrected_text,  # Send the corrected text (no highlights needed)
+            "grammar_mistakes": grammar_mistakes,    # Send the list of mistake strings
+            "correction_spans": correction_spans,    # Send the correction spans for highlighting
+            "gaze_x": gaze_x,
+            "gaze_y": gaze_y,
+            "mimics": mimics,
         })
     except Exception as e:
         # Log the error for debugging purposes (consider using a proper logging library like 'logging')
