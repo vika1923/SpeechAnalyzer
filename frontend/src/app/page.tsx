@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import {
   PieChart, Pie, Cell, // Add these
 } from 'recharts';
@@ -93,9 +94,9 @@ function highlightSpans(text: string, spans: [number, number][]) {
  */
 export default function App() {
   const [uploading, setUploading] = useState(false);
-  const [results, setResults] = useState<AnalysisResults | null>(null);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   /**
    * Handles the video file upload process.
@@ -104,7 +105,6 @@ export default function App() {
   const handleUpload = async (e: React.FormEvent | React.ChangeEvent) => {
     e.preventDefault();
     setError("");
-    setResults(null); // Clear previous results
     const file = fileInputRef.current?.files?.[0];
     if (!file) {
       setError("Please select a video file.");
@@ -123,8 +123,9 @@ export default function App() {
         setError(err.error || "Upload failed");
         return;
       }
-      const data: AnalysisResults = await res.json(); // Type assertion for incoming data
-      setResults(data);
+      const data: AnalysisResults = await res.json();
+      sessionStorage.setItem('analysisResults', JSON.stringify(data));
+      router.push('/results');
     } catch (_err) {
       setError("Could not connect to backend. Please ensure the backend server is running.");
     } finally {
@@ -179,10 +180,10 @@ export default function App() {
           Speech Analyzer
         </a>
         <nav className="space-x-4">
-          <a href="#" className="text-white hover:text-blue-200 transition-colors">
+          <a href="/about" className="text-white hover:text-blue-200 transition-colors">
             About
           </a>
-          <a href="#" className="text-white hover:text-blue-200 transition-colors">
+          <a href="/results" className="text-white hover:text-blue-200 transition-colors">
             Results
           </a>
         </nav>
@@ -267,6 +268,7 @@ export default function App() {
               )}
             </AnimatePresence>
           </motion.div>
+<<<<<<< HEAD
 
           {/* Analysis results section */}
           <AnimatePresence>
@@ -488,6 +490,8 @@ export default function App() {
               </motion.div>
             )}
           </AnimatePresence>
+=======
+>>>>>>> aa95176367686ad53c04c035de894d611020186d
         </div>
       </main>
 
