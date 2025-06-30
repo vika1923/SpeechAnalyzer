@@ -8,7 +8,7 @@ import json
 API_KEY = os.getenv("OR_API_KEY")
 print(API_KEY)
 
-API_KEY = "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" 
+API_KEY = "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" 
 
 almaz = "meta-llama/llama-4-maverick:free"
 
@@ -30,19 +30,15 @@ IMPORTANT: You must provide the actual corrections, not just a header. For each 
     - Format it as: "<incorrect_phrase> should be <correct_phrase>"
     - List each correction on a new line
     - If no mistakes are found, say "No corrections needed"
-    - Only output the corrected mistakes and the corrected text. Do not add your comments.
+    - Only output the corrected mistakes and the corrected text. Do not add your comments, reasoning chains or assumptions. If you about whether something is a mistake, assume it is correct and skip it.
 
 After You listed all the mistakes, output the corrected text itself.
 
 
 Example output:
-{Mistakes:
     "I go to tashkent metro" should be "I went to Tashkent metro"
     "it would be wonderful beautiful" should be "it was wonderfully beautiful"
-    "escavators" should be "escalators"
-Corrected text: 
-    Hello everyone! I will tell you a story that hapened to me yesterday. I went to Tashkent metro yesterday. It was wonderfully beautiful. They have installed new trains and new escalators.}"""
-             },
+    "escavators" should be "escalators" """},
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.3,
@@ -68,31 +64,48 @@ Corrected text:
 t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
 
 def get_mistakes_and_text(text_to_check):
-    corrected_unparsed = fix_grammar(text_to_check).strip()
-    print(corrected_unparsed)
-    
-    # Find the start of mistakes section
-    mistakes_start = corrected_unparsed.find("Mistakes:")
-    if mistakes_start == -1:
+    corrected_unparsed = fix_grammar(text_to_check)
+    if corrected_unparsed is None:
+        print("Grammar correction failed - API error or no response")
         return None, None
     
-    # Find the start of corrected text section
-    corrected_text_start = corrected_unparsed.find("Corrected text:")
-    if corrected_text_start == -1:
-        return None, None
+    corrected_unparsed = corrected_unparsed.strip()
     
-    # Extract mistakes (from after "Mistakes:" up to "Corrected text:")
-    mistakes_section_start = mistakes_start + len("Mistakes:")
-    mistakes = corrected_unparsed[mistakes_section_start:corrected_text_start].strip()
-    
-    # Extract corrected text (everything after "Corrected text:")
-    corrected_text_section_start = corrected_text_start + len("Corrected text:")
-    corrected_text = corrected_unparsed[corrected_text_section_start:].strip()
+    mistakes_lines = []
+    corrected_text = text_to_check
 
-    corrected_text = corrected_text.replace("\\'", "'")
+    lines = corrected_unparsed.splitlines()
+    correction_spans = []
 
-    mistakes_lines = mistakes.split("\n")
-    
-    return mistakes_lines, corrected_text
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        mistakes_lines.append(line)
+
+        if '"' in line and "should be" in line:
+            try:
+                first_quote = line.find('"')
+                second_quote = line.find('"', first_quote + 1)
+                incorrect_phrase = line[first_quote + 1:second_quote]
+
+                should_be_idx = line.find("should be", second_quote)
+                third_quote = line.find('"', should_be_idx)
+                fourth_quote = line.find('"', third_quote + 1)
+                correct_phrase = line[third_quote + 1:fourth_quote]
+
+                # Find the first occurrence of incorrect_phrase in corrected_text
+                idx = corrected_text.find(incorrect_phrase)
+                if idx != -1:
+                    # Record the span as (start_index, end_index) in the original string
+                    # The end_index is exclusive
+                    correction_spans.append((idx, idx + len(correct_phrase)))
+                    # Replace only the first occurrence in corrected_text
+                    corrected_text = corrected_text[:idx] + correct_phrase + corrected_text[idx + len(incorrect_phrase):]
+            except Exception as e:
+                print(f"Error parsing line: {line} ({e})")
+                continue
+
+    return mistakes_lines, corrected_text, correction_spans
 
 print(get_mistakes_and_text(t))

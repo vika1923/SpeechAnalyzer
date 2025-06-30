@@ -16,7 +16,7 @@ import {
 /**
  * Defines the structure for the analysis results returned from the backend.
  * @property {string} transcript - The full transcribed text of the speech.
- * @property {string} corrected_transcript - The grammatically corrected full text, potentially with HTML highlight tags.
+ * @property {string} corrected_transcript - The grammatically corrected full text (plain text, no highlights).
  * @property {number} word_count - The total number of words in the transcript.
  * @property {[number, number][]} rate_of_speech_points - An array of [timestamp, rate] tuples,
  * representing speech rate over time.
@@ -26,12 +26,13 @@ import {
  * (e.g., "compound", "pos", "neu", "neg") and values are their scores.
  * @property {Record<string, number>} parts_of_speech - An object where keys are parts of speech
  * (e.g., "NOUN", "VERB") and values are their counts.
- * @property {[[[number, number], string, string]]} grammar_mistakes - An array of grammar mistakes,
- * where each item is a tuple:
- * - [0]: [start_index_in_highlighted_string, end_index_in_highlighted_string]
- * - [1]: The suggested correction string.
- * - [2]: The original incorrect word/phrase as captured by the tag content.
+ * @property {string[]} grammar_mistakes - An array of grammar mistake strings in the format
+ * "incorrect_phrase should be correct_phrase".
+ * @property {[number, number][]} correction_spans - Array of [start, end] indices for highlights in corrected_transcript.
  *  @property {[number, string, string][]} [custom_tone_results] - Optional: results for custom tone analysis.
+ * @property {number} gaze_x - The x-coordinate of the average gaze direction.
+ * @property {number} gaze_y - The y-coordinate of the average gaze direction.
+ * @property {number} mimics - The number of mimics detected.
  */
 interface AnalysisResults {
   transcript: string;
@@ -41,8 +42,49 @@ interface AnalysisResults {
   volume_points: Record<string, number>;
   tone_scores?: Record<string, number>;
   parts_of_speech: Record<string, number>;
-  grammar_mistakes: [[number, number], string, string][];
+  grammar_mistakes: string[];
+  correction_spans: [number, number][];
   custom_tone_results: [number, string, string][];
+  gaze_x: number;
+  gaze_y: number;
+  mimics: number;
+}
+
+// Helper to highlight spans in corrected_transcript
+function highlightSpans(text: string, spans: [number, number][]) {
+  if (!spans || spans.length === 0) return text;
+  // Sort and merge overlapping/adjacent spans
+  const merged: [number, number][] = [];
+  spans.sort((a, b) => a[0] - b[0]);
+  for (const span of spans) {
+    if (merged.length === 0) {
+      merged.push(span);
+    } else {
+      const last = merged[merged.length - 1];
+      if (span[0] <= last[1]) {
+        last[1] = Math.max(last[1], span[1]);
+      } else {
+        merged.push(span);
+      }
+    }
+  }
+  const result: React.ReactNode[] = [];
+  let lastIdx = 0;
+  merged.forEach(([start, end], i) => {
+    if (lastIdx < start) {
+      result.push(text.slice(lastIdx, start));
+    }
+    result.push(
+      <mark key={i} style={{ background: '#ffd700', color: '#222', borderRadius: 3, padding: '0 2px', fontWeight: 'bold', textDecoration: 'underline wavy #ff4500' }}>
+        {text.slice(start, end)}
+      </mark>
+    );
+    lastIdx = end;
+  });
+  if (lastIdx < text.length) {
+    result.push(text.slice(lastIdx));
+  }
+  return result;
 }
 
 /**
@@ -247,7 +289,7 @@ export default function App() {
                   <p className="font-body text-gray-800 leading-relaxed">{results.transcript}</p>
                 </motion.div>
 
-                {/* Corrected Transcript with Highlights */}
+                {/* Corrected Transcript */}
                 {results.corrected_transcript && results.corrected_transcript !== results.transcript && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -256,22 +298,9 @@ export default function App() {
                     className="border-card border-blue-500 bg-blue-50 p-6 shadow-xl rounded-xl"
                   >
                     <h3 className="font-display text-xl text-blue-700 mb-4">Corrected Transcript</h3>
-                    <p
-                      className="font-body text-gray-800 leading-relaxed grammar-highlight"
-                      dangerouslySetInnerHTML={{ __html: results.corrected_transcript }}
-                    />
-                    <style jsx global>{`
-                      .grammar-highlight c {
-                        background-color: #ffd700; /* Gold-like background for highlight */
-                        padding: 0 2px;
-                        border-radius: 3px;
-                        font-weight: bold;
-                        text-decoration: underline wavy #ff4500; /* OrangeRed underline for mistakes */
-                      }
-                      .grammar-highlight c:hover {
-                          cursor: help;
-                      }
-                    `}</style>
+                    <p className="font-body text-gray-800 leading-relaxed">
+                      {highlightSpans(results.corrected_transcript, results.correction_spans)}
+                    </p>
                   </motion.div>
                 )}
 
@@ -285,14 +314,11 @@ export default function App() {
                   >
                     <h3 className="font-display text-xl text-purple-700 mb-4">Grammar Suggestions</h3>
                     <ul className="list-disc pl-5 font-body text-gray-800 space-y-2">
-                      {results.grammar_mistakes.map((mistake, index) => {
-                        const [range, suggestion, original] = mistake;
-                        return (
-                          <li key={index}>
-                            "{original}" should be "{suggestion}"
-                          </li>
-                        );
-                      })}
+                      {results.grammar_mistakes.map((mistake, index) => (
+                        <li key={index} className="font-medium">
+                          {mistake}
+                        </li>
+                      ))}
                     </ul>
                   </motion.div>
                 )}
@@ -381,6 +407,30 @@ export default function App() {
                       </ul>
                     </motion.div>
                   )}
+
+                  {/* Gaze Direction */}
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.8 }}
+                    className="border-card border-cyan-500 bg-cyan-50 p-6 shadow-xl rounded-xl"
+                  >
+                    <h3 className="font-display text-lg text-cyan-700 mb-2">Average Gaze Direction</h3>
+                    <p className="text-2xl font-bold text-cyan-600">
+                      X: {results.gaze_x.toFixed(2)}, Y: {results.gaze_y.toFixed(2)}
+                    </p>
+                  </motion.div>
+
+                  {/* Mimics */}
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.9 }}
+                    className="border-card border-lime-500 bg-lime-50 p-6 shadow-xl rounded-xl"
+                  >
+                    <h3 className="font-display text-lg text-lime-700 mb-2">Mimics</h3>
+                    <p className="text-3xl font-bold text-lime-600">{results.mimics.toFixed(2)}</p>
+                  </motion.div>
                 </div>
 
                 {/* Parts of Speech Analysis */}
