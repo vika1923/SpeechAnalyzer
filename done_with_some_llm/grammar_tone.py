@@ -17,11 +17,7 @@ logger = logging.getLogger(__name__)
 API_KEY = os.getenv("OR_API_KEY")
 logger.info(f"OR_API_KEY: {API_KEY}")
 
-<<<<<<< HEAD
-API_KEY = "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" 
-=======
 # API_KEY = "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" 
->>>>>>> aa95176367686ad53c04c035de894d611020186d
 
 OR_API_KEY="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"
 
@@ -47,11 +43,7 @@ IMPORTANT: You must provide the actual corrections, not just a header. For each 
     - Format it as: "<incorrect_phrase> should be <correct_phrase>"
     - List each correction on a new line
     - If no mistakes are found, say "No corrections needed"
-<<<<<<< HEAD
-    - Only output the corrected mistakes and the corrected text. Do not add your comments, reasoning chains or assumptions. If you about whether something is a mistake, assume it is correct and skip it.
-=======
     - Only output the corrected mistakes and the corrected text.
->>>>>>> aa95176367686ad53c04c035de894d611020186d
 
 After You listed all the mistakes, output the corrected text itself.
 
@@ -85,16 +77,10 @@ Example output:
 t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
 
 def get_mistakes_and_text(text_to_check):
-<<<<<<< HEAD
-    corrected_unparsed = fix_grammar(text_to_check)
-    if corrected_unparsed is None:
-        print("Grammar correction failed - API error or no response")
-=======
     logger.info("get_mistakes_and_text called")
     corrected_unparsed = fix_grammar(text_to_check)
     if corrected_unparsed is None:
         logger.warning("Grammar correction failed - API error or no response")
->>>>>>> aa95176367686ad53c04c035de894d611020186d
         return None, None
     
     corrected_unparsed = corrected_unparsed.strip()
@@ -110,34 +96,6 @@ def get_mistakes_and_text(text_to_check):
         if not line:
             continue
         mistakes_lines.append(line)
-<<<<<<< HEAD
-
-        if '"' in line and "should be" in line:
-            try:
-                first_quote = line.find('"')
-                second_quote = line.find('"', first_quote + 1)
-                incorrect_phrase = line[first_quote + 1:second_quote]
-
-                should_be_idx = line.find("should be", second_quote)
-                third_quote = line.find('"', should_be_idx)
-                fourth_quote = line.find('"', third_quote + 1)
-                correct_phrase = line[third_quote + 1:fourth_quote]
-
-                # Find the first occurrence of incorrect_phrase in corrected_text
-                idx = corrected_text.find(incorrect_phrase)
-                if idx != -1:
-                    # Record the span as (start_index, end_index) in the original string
-                    # The end_index is exclusive
-                    correction_spans.append((idx, idx + len(correct_phrase)))
-                    # Replace only the first occurrence in corrected_text
-                    corrected_text = corrected_text[:idx] + correct_phrase + corrected_text[idx + len(incorrect_phrase):]
-            except Exception as e:
-                print(f"Error parsing line: {line} ({e})")
-                continue
-
-    return mistakes_lines, corrected_text, correction_spans
-=======
->>>>>>> aa95176367686ad53c04c035de894d611020186d
 
         if '"' in line and "should be" in line:
             try:
