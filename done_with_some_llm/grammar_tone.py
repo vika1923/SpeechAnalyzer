@@ -17,11 +17,6 @@ logger = logging.getLogger(__name__)
 API_KEY = os.getenv("OR_API_KEY")
 logger.info(f"OR_API_KEY: {API_KEY}")
 
-# API_KEY = "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" 
-
-# OR_API_KEY="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"
-
-API_KEY = "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"
 
 # almaz = "meta-llama/llama-4-maverick:free"
 almaz = "deepseek/deepseek-chat-v3-0324:free"
