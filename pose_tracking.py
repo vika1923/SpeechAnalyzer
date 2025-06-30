@@ -82,14 +82,16 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
         dict: Dictionary containing position distribution and statistics
     """
     # Hand position distribution counters
-    uul = 0  # upper-upper left
-    uur = 0  # upper-upper right
-    ul = 0   # upper left
-    ur = 0   # upper right
-    dl = 0   # down left
-    dr = 0   # down right
-    ddl = 0  # down-down left
-    ddr = 0  # down-down right
+    hand_position_counts = {
+        "uul": 0,  # upper-upper left
+        "uur": 0,  # upper-upper right
+        "ul": 0,   # upper left
+        "ur": 0,   # upper right
+        "dl": 0,   # down left
+        "dr": 0,   # down right
+        "ddl": 0,  # down-down left
+        "ddr": 0   # down-down right
+    }
     
     # Open video file
     cap = cv2.VideoCapture(video_path)
@@ -146,8 +148,8 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
                         right_hand_pos = categorize_hand_position(landmarks[16].x, landmarks[16].y, point1, point2, point3)
                         
                         # Increment counters
-                        globals()[left_hand_pos] += 1
-                        globals()[right_hand_pos] += 1
+                        hand_position_counts[left_hand_pos] = hand_position_counts.get(left_hand_pos, 0) + 1
+                        hand_position_counts[right_hand_pos] = hand_position_counts.get(right_hand_pos, 0) + 1
                         total_frames_analyzed += 1
                     
                     if save_frames:
@@ -160,7 +162,7 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
     cv2.destroyAllWindows()
     
     # Calculate results
-    total_hand_positions = uul + uur + ul + ur + dl + dr + ddl + ddr
+    total_hand_positions = sum(hand_position_counts.values())
     
     if total_hand_positions > 0:
         results = {
@@ -168,25 +170,9 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
             "total_frames_analyzed": total_frames_analyzed,
             "total_hand_positions": total_hand_positions,
             "percentages": {
-                "uul": round(uul/total_hand_positions*100, 2),
-                "uur": round(uur/total_hand_positions*100, 2),
-                "ul": round(ul/total_hand_positions*100, 2),
-                "ur": round(ur/total_hand_positions*100, 2),
-                "dl": round(dl/total_hand_positions*100, 2),
-                "dr": round(dr/total_hand_positions*100, 2),
-                "ddl": round(ddl/total_hand_positions*100, 2),
-                "ddr": round(ddr/total_hand_positions*100, 2)
+                key: round(hand_position_counts[key]/total_hand_positions*100, 2) for key in hand_position_counts
             },
-            "absolute_counts": {
-                "uul": uul,
-                "uur": uur,
-                "ul": ul,
-                "ur": ur,
-                "dl": dl,
-                "dr": dr,
-                "ddl": ddl,
-                "ddr": ddr
-            }
+            "absolute_counts": hand_position_counts.copy()
         }
     else:
         results = {
@@ -196,48 +182,37 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
     
     return results
 
-def print_analysis_results(results):
+def format_analysis_results(results):
     """
-    Print the analysis results in a formatted way.
+    Format the analysis results into a string.
     
     Args:
         results: Dictionary containing analysis results
+        
+    Returns:
+        str: Formatted string of analysis results
     """
     if "error" in results:
-        print(f"Error: {results['error']}")
-        return
+        return f"Error: {results['error']}"
     
-    print(f"\n=== HAND POSITION ANALYSIS RESULTS ===")
-    print(f"Video: {results['video_path']}")
-    print(f"Total frames analyzed: {results['total_frames_analyzed']}")
-    print(f"Total hand positions tracked: {results['total_hand_positions']}")
+    formatted_string = f"=== HAND POSITION ANALYSIS RESULTS ===\n"
+    formatted_string += f"Video: {results['video_path']}\n"
+    formatted_string += f"Total frames analyzed: {results['total_frames_analyzed']}\n"
+    formatted_string += f"Total hand positions tracked: {results['total_hand_positions']}\n\n"
     
-    print(f"\nPercentages per hand:")
-    print(f"Upper-Upper Left (uul): {results['percentages']['uul']}%")
-    print(f"Upper-Upper Right (uur): {results['percentages']['uur']}%")
-    print(f"Upper Left (ul): {results['percentages']['ul']}%")
-    print(f"Upper Right (ur): {results['percentages']['ur']}%")
-    print(f"Down Left (dl): {results['percentages']['dl']}%")
-    print(f"Down Right (dr): {results['percentages']['dr']}%")
-    print(f"Down-Down Left (ddl): {results['percentages']['ddl']}%")
-    print(f"Down-Down Right (ddr): {results['percentages']['ddr']}%")
+    formatted_string += "Percentages per hand:\n"
+    for key, percentage in results['percentages'].items():
+        formatted_string += f"{key}: {percentage}%\n"
     
-    print(f"\nAbsolute counts:")
-    print(f"Upper-Upper Left (uul): {results['absolute_counts']['uul']}")
-    print(f"Upper-Upper Right (uur): {results['absolute_counts']['uur']}")
-    print(f"Upper Left (ul): {results['absolute_counts']['ul']}")
-    print(f"Upper Right (ur): {results['absolute_counts']['ur']}")
-    print(f"Down Left (dl): {results['absolute_counts']['dl']}")
-    print(f"Down Right (dr): {results['absolute_counts']['dr']}")
-    print(f"Down-Down Left (ddl): {results['absolute_counts']['ddl']}")
-    print(f"Down-Down Right (ddr): {results['absolute_counts']['ddr']}")
+    formatted_string += "\nAbsolute counts:\n"
+    for key, count in results['absolute_counts'].items():
+        formatted_string += f"{key}: {count}\n"
+    
+    return formatted_string
 
 
 if __name__ == "__main__":
     # Analyze the video
     video_path = 'videos/almazvawing.mp4'
     results = analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5)
-    
-    # Print results
-    print_analysis_results(results)
 

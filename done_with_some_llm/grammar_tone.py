@@ -19,7 +19,9 @@ logger.info(f"OR_API_KEY: {API_KEY}")
 
 # API_KEY = "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" 
 
-OR_API_KEY="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"
+# OR_API_KEY="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"
+
+API_KEY = "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"
 
 # almaz = "meta-llama/llama-4-maverick:free"
 almaz = "deepseek/deepseek-chat-v3-0324:free"
@@ -60,7 +62,13 @@ Example output:
 
     response = requests.post(url, headers=headers, json=payload)
     
-    data = response.json()
+    logger.info(f"Raw response text from OpenRouter: {response.text}")
+    try:
+        data = response.json()
+    except Exception as e:
+        logger.error(f"Failed to parse JSON from OpenRouter: {e}")
+        return None
+
     logger.debug(f"RESPONSE from OpenRouter: {data}")
 
     logger.info("corrected with llama in grammar_tone")
@@ -74,7 +82,6 @@ Example output:
         logger.error(f"Data from OpenRouter: {data}")
         return None
 
-t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
 
 def get_mistakes_and_text(text_to_check):
     logger.info("get_mistakes_and_text called")
@@ -121,5 +128,7 @@ def get_mistakes_and_text(text_to_check):
                 continue
 
     return mistakes_lines, corrected_text, correction_spans
+
+# t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
 
 # print(get_mistakes_and_text(t))

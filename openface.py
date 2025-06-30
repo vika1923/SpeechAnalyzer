@@ -45,6 +45,6 @@ def return_numbers(file_path):
     temp_dir = "videos/openface"
     extract_video(file_path, temp_dir)
     out = get_gaze_and_aus(temp_dir+"/video.csv")
-    return out['gaze_angle_x'], out['gaze_angle_x'], get_all_aus_sum(out)
+    return out['gaze_angle_x'], out['gaze_angle_y'], get_all_aus_sum(out)
 
 
