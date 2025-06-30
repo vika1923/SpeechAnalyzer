@@ -17,6 +17,13 @@ logger = logging.getLogger(__name__)
 API_KEY = os.getenv("OR_API_KEY")
 logger.info(f"OR_API_KEY: {API_KEY}")
 
+# API_KEY = "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" 
+
+# API_KEY="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"
+
+# API_KEY = "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"
+# API_KEY = "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"
+API_KEY="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"
 
 # almaz = "meta-llama/llama-4-maverick:free"
 almaz = "deepseek/deepseek-chat-v3-0324:free"
@@ -124,6 +131,6 @@ def get_mistakes_and_text(text_to_check):
 
     return mistakes_lines, corrected_text, correction_spans
 
-# t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
+t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
 
-# print(get_mistakes_and_text(t))
+print(get_mistakes_and_text(t))
