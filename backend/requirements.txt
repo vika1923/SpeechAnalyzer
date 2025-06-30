@@ -18,5 +18,5 @@ requests
 # eng-to-ipa
 # dtwalign
 # vaderSentiment>=3.3.2
-# cv2
+opencv-python
 mediapipe

@@ -13,7 +13,7 @@ import rate_of_speech
 from done_with_some_llm import grammar_tone, sapling
 import openface
 # Remove Gramformer import since we're using grammar_tone instead
-# from gramformer import Gramformer # Import Gramformer
+from gramformer import Gramformer # type: ignore
 
 # Remove Gramformer initialization since we're using grammar_tone instead
 # Initialize Gramformer globally
@@ -21,6 +21,7 @@ import openface
 # use_gpu=True if you have a compatible GPU and PyTorch is configured for it
 # gf = Gramformer(models=1, use_gpu=False)
 
+gf = Gramformer(models=1, use_gpu=False)
 # --- Logging Setup ---
 logging.basicConfig(
     level=logging.INFO,
@@ -49,32 +50,11 @@ app.add_middleware(
 
 # --- Grammar Correction Helper Functions ---
 # Remove the old Gramformer-based functions and replace with grammar_tone integration
-def process_grammar_correction(text_to_check: str):
+def process_grammar_correction(influent_sentences: str):
     """
     Uses the get_mistakes_and_text function from grammar_tone.py to process grammar correction.
     Returns (mistakes_list, corrected_text, correction_spans).
     """
-<<<<<<< HEAD
-    result = grammar_tone.get_mistakes_and_text(text_to_check)
-    if result is None or len(result) < 3:
-        # If no mistakes found or error occurred, return empty list and original text
-        return [], text_to_check, []
-    mistakes_lines, corrected_text, correction_spans = result
-    
-    # Filter out empty lines and clean up the mistakes
-    cleaned_mistakes = []
-    for mistake in mistakes_lines:
-        mistake = mistake.strip()
-        if mistake and mistake != "No corrections needed":
-            cleaned_mistakes.append(mistake)
-    
-    print("corrected with grammar_tone in api_server")
-    print(f"Mistakes found: {len(cleaned_mistakes)}")
-    print(f"Corrected text: {corrected_text}")
-    print(f"Correction spans: {correction_spans}")
-    
-    return cleaned_mistakes, corrected_text, correction_spans
-=======
     logger.info("get_corrected_text called")
     edited_sentences = []
     for influent_sentence in influent_sentences:
@@ -144,7 +124,6 @@ def get_parsed_corrections(highlighted_sentences: list[str]) -> list[tuple[tuple
             current_idx = closing_tag_start + len('</c>')
 
     return mistake_details
->>>>>>> aa95176367686ad53c04c035de894d611020186d
 
 # --- FastAPI Routes ---
 
