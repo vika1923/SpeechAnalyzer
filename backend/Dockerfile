@@ -66,6 +66,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
+<<<<<<< HEAD
     pip install "fastapi[all]" uvicorn moviepy nltk
 
 # Download NLTK data
