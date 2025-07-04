@@ -1,0 +1,13 @@
+Input:.\videos\vika2.mp4
+Input full path:X:\programming\SpeechAnalyzer\videos\vika2.mp4
+Camera parameters:1312.5,1312.5,960,540
+Output HOG:vika2.hog
+Output video:vika2.avi
+Output aligned directory:vika2_aligned
+Output csv:vika2.csv
+Gaze: 1
+AUs: 1
+Landmarks 2D: 1
+Landmarks 3D: 1
+Pose: 1
+Shape parameters: 1

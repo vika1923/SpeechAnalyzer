@@ -10,7 +10,7 @@ import parts_of_speech
 import read_volume
 import rate_of_speech
 from done_with_some_llm import grammar_tone, sapling
-import openface
+import pose_tracking
 # Remove Gramformer import since we're using grammar_tone instead
 # from gramformer import Gramformer # Import Gramformer
 
@@ -121,7 +121,16 @@ async def upload_video(file: UploadFile = File(...)):
         # Analyze custom tones (Grammarly-like, now using Sapling)
         custom_tone_results = sapling.get_tone(full_text)
 
-        gaze_x, gaze_y, mimics = openface.return_numbers(file_path)
+        # Analyze hand positions
+        hand_results = pose_tracking.analyze_hand_positions(file_path)
+        hand_position_results = pose_tracking.format_analysis_results(hand_results)
+
+        # OpenFace is disabled for Railway deployment
+        gaze_x = 0.0
+        gaze_y = 0.0
+        mimics = 0.0
+        gaze_vectors = {}
+        aus = {}
 
         # Return all analysis results as JSON
         return JSONResponse(content={
@@ -138,6 +147,9 @@ async def upload_video(file: UploadFile = File(...)):
             "gaze_x": gaze_x,
             "gaze_y": gaze_y,
             "mimics": mimics,
+            "gaze_vectors": gaze_vectors,
+            "aus": aus,
+            "hand_position_results": hand_position_results,
         })
     except Exception as e:
         # Log the error for debugging purposes (consider using a proper logging library like 'logging')

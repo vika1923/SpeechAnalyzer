@@ -33,6 +33,8 @@ import {
  * @property {number} gaze_x - The x-coordinate of the average gaze direction.
  * @property {number} gaze_y - The y-coordinate of the average gaze direction.
  * @property {number} mimics - The number of mimics detected.
+ * @property {Record<string, number>} gaze_vectors - Optional: gaze vectors for the analysis.
+ * @property {Record<string, number>} aus - Optional: action units for the analysis.
  */
 interface AnalysisResults {
   transcript: string;
@@ -48,6 +50,9 @@ interface AnalysisResults {
   gaze_x: number;
   gaze_y: number;
   mimics: number;
+  gaze_vectors?: { [key: string]: number };
+  aus?: { [key: string]: number };
+  hand_position_results?: string;
 }
 
 // Helper to highlight spans in corrected_transcript
@@ -125,6 +130,7 @@ export default function App() {
       }
       const data: AnalysisResults = await res.json(); // Type assertion for incoming data
       setResults(data);
+      sessionStorage.setItem('analysisResults', JSON.stringify(data));
     } catch (_err) {
       setError("Could not connect to backend. Please ensure the backend server is running.");
     } finally {
@@ -409,7 +415,7 @@ export default function App() {
                   )}
 
                   {/* Gaze Direction */}
-                  <motion.div
+                  {/* <motion.div
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.8 }}
@@ -419,18 +425,27 @@ export default function App() {
                     <p className="text-2xl font-bold text-cyan-600">
                       X: {results.gaze_x.toFixed(2)}, Y: {results.gaze_y.toFixed(2)}
                     </p>
-                  </motion.div>
+                    {results.gaze_vectors && (
+                      <div className="mt-2">
+                        <span className="font-semibold">Gaze Vectors:</span>
+                        <ul className="ml-4 list-disc">
+                          <li>Left Eye: X: {results.gaze_vectors[' gaze_0_x']?.toFixed(3)}, Y: {results.gaze_vectors[' gaze_0_y']?.toFixed(3)}, Z: {results.gaze_vectors[' gaze_0_z']?.toFixed(3)}</li>
+                          <li>Right Eye: X: {results.gaze_vectors[' gaze_1_x']?.toFixed(3)}, Y: {results.gaze_vectors[' gaze_1_y']?.toFixed(3)}, Z: {results.gaze_vectors[' gaze_1_z']?.toFixed(3)}</li>
+                        </ul>
+                      </div>
+                    )}
+                  </motion.div> */}
 
                   {/* Mimics */}
-                  <motion.div
+                  {/* <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.9 }}
-                    className="border-card border-lime-500 bg-lime-50 p-6 shadow-xl rounded-xl"
+                    className="border-card border-lime-500 bg-lime-100 bg-cyan-50 p-6 shadow-xl rounded-xl"
                   >
                     <h3 className="font-display text-lg text-lime-700 mb-2">Mimics</h3>
                     <p className="text-3xl font-bold text-lime-600">{results.mimics.toFixed(2)}</p>
-                  </motion.div>
+                  </motion.div> */}
                 </div>
 
                 {/* Parts of Speech Analysis */}
@@ -473,6 +488,19 @@ export default function App() {
         </ResponsiveContainer>
     </div>
 </motion.div>
+
+                {/* Hand Position Analysis */}
+                {results.hand_position_results && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.9 }}
+                    className="border-card border-gray-500 bg-gray-50 p-6 shadow-xl rounded-xl"
+                  >
+                    <h3 className="font-display text-xl text-gray-700 mb-4">Hand Position Analysis</h3>
+                    <pre className="font-mono text-sm text-gray-800 whitespace-pre-wrap">{results.hand_position_results}</pre>
+                  </motion.div>
+                )}
 
                 {/* Analyze Another Video button */}
                 <div className="text-center mt-8">

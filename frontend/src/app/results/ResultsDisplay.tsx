@@ -19,6 +19,8 @@ interface AnalysisResults {
   hand_position_results: string;
   gaze_angle_x?: number;
   gaze_angle_y?: number;
+  gaze_vectors?: { [key: string]: number };
+  aus?: { [key: string]: number };
   all_aus_sum?: number;
 }
 
@@ -230,6 +232,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       )}
 
       {/* OpenFace Gaze & AU Analysis */}
+      {/*
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -240,9 +243,29 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
         <div className="font-body text-gray-800 space-y-2">
           <div><span className="font-semibold">Gaze Angle X:</span> {results.gaze_angle_x?.toFixed(3)}</div>
           <div><span className="font-semibold">Gaze Angle Y:</span> {results.gaze_angle_y?.toFixed(3)}</div>
+          {results.gaze_vectors && (
+            <div className="mt-2">
+              <span className="font-semibold">Gaze Vectors:</span>
+              <ul className="ml-4 list-disc">
+                <li>Left Eye: X: {results.gaze_vectors[' gaze_0_x']?.toFixed(3)}, Y: {results.gaze_vectors[' gaze_0_y']?.toFixed(3)}, Z: {results.gaze_vectors[' gaze_0_z']?.toFixed(3)}</li>
+                <li>Right Eye: X: {results.gaze_vectors[' gaze_1_x']?.toFixed(3)}, Y: {results.gaze_vectors[' gaze_1_y']?.toFixed(3)}, Z: {results.gaze_vectors[' gaze_1_z']?.toFixed(3)}</li>
+              </ul>
+            </div>
+          )}
           <div><span className="font-semibold">Sum of All AU Diffs:</span> {results.all_aus_sum?.toFixed(3)}</div>
+          {results.aus && (
+            <div className="mt-2">
+              <span className="font-semibold">Action Units (AUs):</span>
+              <ul className="ml-4 list-disc grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1">
+                {Object.entries(results.aus).map(([au, value]) => (
+                  <li key={au}>{au.trim()}: {value?.toFixed(3)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </motion.div>
+      */}
     </motion.div>
   );
 } 

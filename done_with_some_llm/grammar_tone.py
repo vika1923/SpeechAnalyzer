@@ -6,9 +6,7 @@ import json
 # 2. assess the text on scale from 1 to 10 for the following categories: confident, assertive, inspirational, informative, direct.
 
 API_KEY = os.getenv("OR_API_KEY")
-print(API_KEY)
 
-API_KEY = "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" 
 
 almaz = "meta-llama/llama-4-maverick:free"
 

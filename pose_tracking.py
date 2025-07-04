@@ -3,8 +3,9 @@ import mediapipe as mp
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
+import os
 
-model_path = '/Users/kv_gab/Projects/SpeechAnalyzer/mediapipe_landmarker/pose_landmarker_lite.task'
+model_path = os.path.join(os.path.dirname(__file__), 'mediapipe_landmarker', 'pose_landmarker_lite.task')
 
 BaseOptions = mp.tasks.BaseOptions
 PoseLandmarker = mp.tasks.vision.PoseLandmarker
