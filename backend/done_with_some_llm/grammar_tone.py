@@ -17,8 +17,6 @@ logger = logging.getLogger(__name__)
 API_KEY = os.getenv("OR_API_KEY")
 logger.info(f"OR_API_KEY: {API_KEY}")
 
-API_KEY="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"
-
 # almaz = "meta-llama/llama-4-maverick:free"
 almaz = "deepseek/deepseek-chat-v3-0324:free"
 
@@ -47,7 +45,7 @@ After You listed all the mistakes, output the corrected text itself.
 
 
 Example output:
-    "I go to tashkent metro" should be "I went to Tashkent metro"
+    "I go to Tashkent metro" should be "I went to Tashkent metro"
     "it would be wonderful beautiful" should be "it was wonderfully beautiful"
     "escavators" should be "escalators" """},
             {"role": "user", "content": prompt}
@@ -84,7 +82,7 @@ def get_mistakes_and_text(text_to_check):
     corrected_unparsed = fix_grammar(text_to_check)
     if corrected_unparsed is None:
         logger.warning("Grammar correction failed - API error or no response")
-        return None, None
+        return None, None, None
     
     corrected_unparsed = corrected_unparsed.strip()
     

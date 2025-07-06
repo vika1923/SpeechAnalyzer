@@ -63,7 +63,7 @@ def get_grammar_corrections(text: str):
     if correction_spans is None:
         correction_spans = []
     return mistakes_lines, corrected_text, correction_spans
-#
+
 # --- FastAPI Routes ---
 
 @app.post("/api/upload")
