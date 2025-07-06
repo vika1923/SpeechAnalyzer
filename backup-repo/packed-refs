@@ -1,6 +1,0 @@
-# pack-refs with: peeled fully-peeled sorted 
-d62acbf1821312458e2cc8b5c737b6d0041ad485 refs/heads/ai-windows
-6984df1d31d79b4e519ba785324e3eaee238312b refs/heads/docker
-2105bd6664561c5a1e49811b5d2c781c30fad80c refs/heads/docker_main
-ed4916234955a03949aa32932c7c6fb5fbd123bb refs/heads/main
-9868fdff3b9dddb37c64545b4ed693692cddda72 refs/heads/master
