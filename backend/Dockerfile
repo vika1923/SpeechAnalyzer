@@ -3,8 +3,11 @@ FROM ubuntu:24.04
 # Set non-interactive frontend
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install system dependencies and add deadsnakes PPA for Python 3.11
 RUN apt-get update && apt-get install -y \
+    software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt-get update && apt-get install -y \
     build-essential \
     cmake \
     git \
