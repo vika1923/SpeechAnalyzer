@@ -4,10 +4,8 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies and add deadsnakes PPA for Python 3.11
-RUN apt-get update && apt-get install -y \
-    software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
     build-essential \
     cmake \
     git \
@@ -25,10 +23,14 @@ RUN apt-get update && apt-get install -y \
     libswscale-dev \
     libjpeg-dev \
     libpng-dev \
+    libsdl2-dev \
     python3.11 \
     python3.11-venv \
     python3.11-dev \
     python3-pip \
+    && add-apt-repository ppa:deadsnakes/ppa -y \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Set Python 3.11 as default
@@ -56,7 +58,7 @@ RUN git clone https://github.com/TadasBaltrusaitis/OpenFace.git && \
     mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=RELEASE .. && \
-    make -j$(nproc) || exit 1 && \
+    make -j$(nproc) && \
     cd /opt && rm -rf OpenFace/build
 
 # Download OpenFace models
@@ -68,14 +70,14 @@ WORKDIR /app
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt && \
-    pip install opencv-python-headless fastapi[all] uvicorn moviepy nltk
+RUN python3.11 -m pip install --upgrade pip setuptools>=70.0.0 wheel --no-cache-dir && \
+    python3.11 -m pip install -r requirements.txt --no-cache-dir && \
+    python3.11 -m pip install opencv-python-headless==4.10.0.84 fastapi==0.115.0 "uvicorn[standard]==0.30.6" moviepy==1.0.3 nltk==3.9.1 --no-cache-dir
 
 # Download NLTK data
-RUN python -c "import nltk; nltk.download('universal_tagset')" && \
-    python -c "import nltk; nltk.download('punkt')" && \
-    python -c "import nltk; nltk.download('averaged_perceptron_tagger_eng')"
+RUN python3.11 -c "import nltk; nltk.download('universal_tagset')" && \
+    python3.11 -c "import nltk; nltk.download('punkt')" && \
+    python3.11 -c "import nltk; nltk.download('averaged_perceptron_tagger_eng')"
 
 # Copy app code
 COPY . .
