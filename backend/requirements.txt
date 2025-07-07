@@ -9,7 +9,7 @@ nltk
 polars
 scipy
 librosa
-git+https://github.com/PrithivirajDamodaran/Gramformer.git  # Gramformer. for grammar_checker
+# git+https://github.com/PrithivirajDamodaran/Gramformer.git  # Gramformer. for grammar_checker
 # transformers>=4.0.0
 spacy>=3.7.0  # Updated for Python 3.12 compatibility
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
