@@ -1,4 +1,4 @@
-FROM ubuntu:23.04
+FROM ubuntu:24.04
 
 # Set non-interactive frontend
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,23 +10,21 @@ RUN apt-get update && apt-get install -y \
     git \
     wget \
     unzip \
-    pkg-config \
+    curl \
     libboost-all-dev \
     libopencv-dev \
     libtbb-dev \
     libopenblas-dev \
-    libx11-dev \
+    liblapack-dev \
     ffmpeg \
-    python3.11 \
-    python3.11-venv \
-    python3.11-dev \
-    libgtk2.0-dev \
     libavcodec-dev \
     libavformat-dev \
     libswscale-dev \
-    libx11-dev \
     libjpeg-dev \
     libpng-dev \
+    python3.11 \
+    python3.11-venv \
+    python3.11-dev \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
@@ -40,12 +38,14 @@ WORKDIR /opt
 # Build dlib
 RUN git clone https://github.com/davisking/dlib.git && \
     cd dlib && \
+    git checkout v19.24.2 && \
     mkdir build && \
     cd build && \
     cmake .. && \
     cmake --build . --config Release && \
     make install && \
-    ldconfig
+    ldconfig && \
+    cd /opt && rm -rf dlib
 
 # Clone and build OpenFace
 RUN git clone https://github.com/TadasBaltrusaitis/OpenFace.git && \
@@ -53,7 +53,8 @@ RUN git clone https://github.com/TadasBaltrusaitis/OpenFace.git && \
     mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=RELEASE .. && \
-    make -j$(nproc)
+    make -j$(nproc) || exit 1 && \
+    cd /opt && rm -rf OpenFace/build
 
 # Download OpenFace models
 WORKDIR /opt/OpenFace
@@ -66,7 +67,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt && \
-    pip install "fastapi[all]" uvicorn moviepy nltk
+    pip install opencv-python-headless fastapi[all] uvicorn moviepy nltk
 
 # Download NLTK data
 RUN python -c "import nltk; nltk.download('universal_tagset')" && \
