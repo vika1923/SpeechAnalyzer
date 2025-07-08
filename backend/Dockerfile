@@ -37,7 +37,7 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 &
     update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
 
 # Upgrade pip and fix setuptools compatibility issue
-RUN python -m pip install --upgrade pip && \
+RUN apt upgrade python3-pip && \
     pip install setuptools==58.2.0
 
 WORKDIR /opt
