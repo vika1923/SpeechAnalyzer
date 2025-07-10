@@ -24,8 +24,10 @@ import openface
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
+    handlers=[
+        logging.FileHandler('api_server.log', mode='a'),
+        logging.StreamHandler()  # This outputs to console
+    ]
 )
 logger = logging.getLogger(__name__)
 
