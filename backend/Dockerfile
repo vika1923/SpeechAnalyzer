@@ -25,6 +25,8 @@ RUN apt-get update && apt-get install -y \
     libswscale-dev \
     libjpeg-dev \
     libpng-dev \
+    libgtk2.0-dev \
+    pkg-config \
     python3.11 \
     python3.11-venv \
     python3.11-dev \
@@ -77,8 +79,11 @@ RUN pip install -r requirements.txt && \
 
 # Download NLTK data
 RUN python -c "import nltk; nltk.download('universal_tagset')" && \
-    python -c "import nltk; nltk.download('punkt')" && \
+    python -c "import nltk; nltk.download('punkt_tab')" && \
     python -c "import nltk; nltk.download('averaged_perceptron_tagger_eng')"
+
+RUN python -c "from deepmultilingualpunctuation import PunctuationModel; PunctuationModel()"
+RUN python -c "from faster_whisper import WhisperModel; WhisperModel('large-v3', device='cpu', compute_type='int8')"
 
 # Copy app code
 COPY . .
