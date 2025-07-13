@@ -53,8 +53,7 @@ RUN git clone https://github.com/davisking/dlib.git && \
     cmake .. && \
     cmake --build . --config Release && \
     make install && \
-    ldconfig && \
-    cd /opt && rm -rf dlib
+    ldconfig
 
 # Clone and build OpenFace
 RUN git clone https://github.com/TadasBaltrusaitis/OpenFace.git && \
@@ -62,8 +61,7 @@ RUN git clone https://github.com/TadasBaltrusaitis/OpenFace.git && \
     mkdir build && \
     cd build && \
     cmake -D CMAKE_BUILD_TYPE=RELEASE .. && \
-    make -j$(nproc) || exit 1 && \
-    cd /opt && rm -rf OpenFace/build
+    make -j$(nproc)
 
 # Download OpenFace models
 WORKDIR /opt/OpenFace
@@ -75,7 +73,7 @@ WORKDIR /app
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install -r requirements.txt && \
-    pip install opencv-python-headless fastapi[all] uvicorn nltk
+    pip install fastapi[all] uvicorn
 
 # Download NLTK data
 RUN python -c "import nltk; nltk.download('universal_tagset')" && \
