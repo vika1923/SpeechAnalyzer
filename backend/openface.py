@@ -1,5 +1,6 @@
 import subprocess 
 import polars as pl
+import logging
 
 def extract_video(file_path, out_dir, file_name = "video"): 
     subprocess.run([
@@ -43,11 +44,15 @@ def get_all_aus_sum(dick):
     return sum
 
 def return_numbers(file_path):
+    logging.basicConfig(level=logging.INFO)
     try:
         temp_dir = "/app/videos/openface"  # Use absolute path that exists in container
         extract_video(file_path, temp_dir)
         out = get_gaze_and_aus(temp_dir+"/video.csv")
-    except: 
+        result = (out['gaze_angle_x'], out['gaze_angle_y'], get_all_aus_sum(out))
+        logging.info(f"return_numbers({file_path}) returns: {result}")
+    except Exception as e:
+        logging.error(f"return_numbers({file_path}) failed: {e}")
         return (None, None, None)
-    return out['gaze_angle_x'], out['gaze_angle_y'], get_all_aus_sum(out)
+    return result
 
