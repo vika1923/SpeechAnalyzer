@@ -41,46 +41,49 @@ RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 &
 # Upgrade pip and fix setuptools compatibility issue
 RUN apt upgrade python3-pip && \
     pip install setuptools==58.2.0
-
-WORKDIR /opt
-
-# Build dlib
-RUN git clone https://github.com/davisking/dlib.git && \
-    cd dlib && \
-    git checkout v19.24.2 && \
-    mkdir build && \
-    cd build && \
-    cmake .. && \
-    cmake --build . --config Release && \
-    make install && \
-    ldconfig
-
-# Clone and build OpenFace
-RUN git clone https://github.com/TadasBaltrusaitis/OpenFace.git && \
-    cd OpenFace && \
-    mkdir build && \
-    cd build && \
-    cmake -D CMAKE_BUILD_TYPE=RELEASE .. && \
-    make -j$(nproc)
-
-# Download OpenFace models
-WORKDIR /opt/OpenFace
-RUN bash download_models.sh
-
+#
+# WORKDIR /opt
+#
+# # Build dlib
+# RUN git clone https://github.com/davisking/dlib.git && \
+#     cd dlib && \
+#     git checkout v19.24.2 && \
+#     mkdir build && \
+#     cd build && \
+#     cmake .. && \
+#     cmake --build . --config Release && \
+#     make install && \
+#     ldconfig && \
+#     cd /opt && rm -rf dlib
+#
+# # Clone and build OpenFace
+# RUN git clone https://github.com/TadasBaltrusaitis/OpenFace.git && \
+#     cd OpenFace && \
+#     mkdir build && \
+#     cd build && \
+#     cmake -D CMAKE_BUILD_TYPE=RELEASE .. && \
+#     make -j$(nproc) || exit 1 && \
+#     cd /opt && rm -rf OpenFace/build
+#
+# # Download OpenFace models
+# WORKDIR /opt/OpenFace
+# RUN bash download_models.sh
+#
 # Set up app directory
 WORKDIR /app
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install -r requirements.txt && \
-    pip install fastapi[all] uvicorn
+    pip install opencv-python-headless fastapi[all] uvicorn nltk
 
 # Download NLTK data
 RUN python -c "import nltk; nltk.download('universal_tagset')" && \
     python -c "import nltk; nltk.download('punkt_tab')" && \
     python -c "import nltk; nltk.download('averaged_perceptron_tagger_eng')"
 
-RUN python -c "from deepmultilingualpunctuation import PunctuationModel; PunctuationModel()"
+# TODO: Remove puncuation and make it LLM's job
+RUN python -c "from deepmultilingualpunctuation import PunctuationModel; PunctuationModel()" 
 RUN python -c "from faster_whisper import WhisperModel; WhisperModel('large-v3', device='cpu', compute_type='int8')"
 
 # Copy app code

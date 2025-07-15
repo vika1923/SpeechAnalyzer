@@ -2,9 +2,9 @@ import subprocess
 import polars as pl
 import logging
 
-def extract_video(file_path, out_dir, file_name = "video"): 
+def extract_video(file_path, out_dir, file_name = "video", openface_path='/opt/OpenFace/build/bin/FeatureExtraction'): 
     subprocess.run([
-        '/opt/OpenFace/build/bin/FeatureExtraction',  # Use absolute path
+        openface_path,  # Use absolute path
         '-f', file_path,
         '-out_dir', out_dir,
         '-of', file_name, 
@@ -19,6 +19,7 @@ def get_gaze_and_aus(file_path):
         "AU09_r", "AU10_r", "AU12_r", "AU14_r", "AU15_r", "AU17_r",
         "AU20_r", "AU23_r", "AU25_r", "AU26_r", "AU45_r",
     ]
+    print("Yes")
     df = pl.read_csv(file_path, columns=gaze + aus)
 
     result = {}
@@ -43,12 +44,13 @@ def get_all_aus_sum(dick):
             sum += value
     return sum
 
-def return_numbers(file_path):
+def return_numbers(file_path, openface_path='/opt/OpenFace/build/bin/FeatureExtraction', temp_dir = "app/videos/openface"):
     logging.basicConfig(level=logging.INFO)
     try:
-        temp_dir = "/app/videos/openface"  # Use absolute path that exists in container
-        extract_video(file_path, temp_dir)
-        out = get_gaze_and_aus(temp_dir+"/video.csv")
+        # temp_dir = "/app/videos/openface"  # Use absolute path that exists in container
+        extract_video(file_path, temp_dir, openface_path=openface_path)
+        print("No")
+        out = get_gaze_and_aus(temp_dir+"/video.csv") # add stuff
         result = (out['gaze_angle_x'], out['gaze_angle_y'], get_all_aus_sum(out))
         logging.info(f"return_numbers({file_path}) returns: {result}")
     except Exception as e:
@@ -56,3 +58,8 @@ def return_numbers(file_path):
         return (None, None, None)
     return result
 
+if __name__ == "__main__":
+    print("Hello")
+    numbers = return_numbers('/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/Vika.mov', 
+                             '/Users/almaz/PycharmProjects/SpeechAnalyzer/openFace/OpenFace/build/bin/FeatureExtraction', 
+                             '/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/tests')
