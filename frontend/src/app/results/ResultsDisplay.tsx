@@ -230,6 +230,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       )}
 
       {/* OpenFace Gaze & AU Analysis */}
+      { results.gaze_angle_x && results.gaze_angle_y && results.all_aus_sum && (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -243,6 +244,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
           <div><span className="font-semibold">Sum of All AU Diffs:</span> {results.all_aus_sum?.toFixed(3)}</div>
         </div>
       </motion.div>
+      )}
     </motion.div>
   );
 } 

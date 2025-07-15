@@ -1,17 +1,10 @@
-version: '3.8'
-
 services:
   backend:
     build: ./backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - ./shared_data:/shared_data
     environment:
       - PYTHONUNBUFFERED=1
-    depends_on:
-      - openface-service
 
   frontend:
     build: ./frontend
@@ -22,10 +15,3 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-
-  openface-service:
-    build: ./openface-service
-    volumes:
-      - ./shared_data:/shared_data
-    environment:
-      - PYTHONUNBUFFERED=1
