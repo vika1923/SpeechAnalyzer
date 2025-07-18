@@ -1,0 +1,83 @@
+# Stage 1: Build OpenFace FeatureExtraction
+FROM ubuntu:24.04 as builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    git \
+    wget \
+    libboost-all-dev \
+    libopencv-dev \
+    libtbb-dev \
+    libopenblas-dev \
+    liblapack-dev \
+    ffmpeg \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libgtk2.0-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt
+
+# Build dlib
+RUN git clone https://github.com/davisking/dlib.git && \
+    cd dlib && git checkout v19.24.2 && \
+    mkdir build && cd build && \
+    cmake .. && cmake --build . --config Release && \
+    make install && ldconfig
+
+# Build OpenFace and extract FeatureExtraction binary
+# cmake -D WITH_OPENMP=ON CMAKE_BUILD_TYPE=RELEASE -DBOOST_ROOT=/usr/local/opt/boost -DCMAKE_EXE_LINKER_FLAGS="-L/usr/local/lib -lboost_file system -lboost_system" ..
+RUN git clone https://github.com/TadasBaltrusaitis/OpenFace.git && \
+    cd OpenFace && mkdir build && cd build && \
+    cmake -D CMAKE_BUILD_TYPE=RELEASE .. && \
+    make -j$(nproc)
+
+# Download OpenFace models
+WORKDIR /models
+RUN wget https://github.com/TadasBaltrusaitis/OpenFace/releases/download/OpenFace_v2.2.0/au_predictors.zip && \
+    unzip au_predictors.zip && rm au_predictors.zip
+
+---
+
+# Stage 2: Final minimal image
+FROM python:3.11-slim as final
+
+# Install minimal required dependencies
+RUN apt-get update && apt-get install -y \
+    ffmpeg libopencv-core-dev libopencv-imgproc-dev libopencv-videoio-dev libtbb2 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy only what you need from builder
+COPY --from=builder /opt/OpenFace/build/bin/FeatureExtraction /usr/local/bin/FeatureExtraction
+COPY --from=builder /models /models
+
+# Install your Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir opencv-python-headless fastapi[all] uvicorn nltk
+
+# Download only necessary NLTK data
+RUN python -c "import nltk; nltk.download('punkt')"  # change this based on what you actually use
+
+# Copy your app code
+COPY . .
+
+# Setup data directories
+RUN mkdir -p /shared_data/requests /shared_data/uploads /shared_data/output /app/videos/openface
+
+# Add to PATH
+ENV PATH="/usr/local/bin:${PATH}"
+
+EXPOSE 8000
+CMD ["uvicorn", "api_server:app", "--host", "0.0.0.0", "--port", "8000"]
+
