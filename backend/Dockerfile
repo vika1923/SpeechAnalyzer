@@ -75,7 +75,7 @@ WORKDIR /app
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
 RUN pip install -r requirements.txt && \
-    pip install opencv-python-headless fastapi[all] uvicorn nltk
+    pip install fastapi[all] uvicorn
 
 # Download NLTK data
 RUN python -c "import nltk; nltk.download('universal_tagset')" && \
