@@ -38,7 +38,8 @@ origins = [
     "http://localhost",
     "http://localhost:3000",
     "http://localhost:3001", # Frontend running on port 3001
-    "http://localhost:3002", # Your frontend's common development port
+    "http://localhost:3002",
+    "http://commai.online" # Your frontend's common development port
     # Add other origins if your frontend might be hosted elsewhere later
 ]
 app.add_middleware(
