@@ -87,14 +87,18 @@ async def upload_video(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
+        logger.info("Converting to video to audio")
         # Convert video to WAV audio
         audio_path = video_to_vaw.convert_video_to_wav(file_path)
+        logger.info(f"Audio path: {audio_path}")
         if audio_path is None:
             return JSONResponse(status_code=400, content={"error": "No audio track found in video or conversion failed."})
 
+        logger.info("Transcribing")
         # Transcribe speech to words with timestamps
         timestamped_transcript_by_words = speech_to_text.speech_to_words(audio_path=audio_path)
         
+        logger.info("Counting words")
         # Calculate word count
         word_count = rate_of_speech.count_words(timestamped_transcript_by_words)
         
@@ -102,9 +106,11 @@ async def upload_video(file: UploadFile = File(...)):
         # FIX: Changed 'timestamped_transcript_by_items' to 'timestamped_transcript_by_words'
         full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words.items())
         
+        logger.info("Adding punctuation")
         # Add punctuation to the full text
         full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
         
+        logger.info("Getting grammar corrections")
         # --- Grammar Correction (now using grammar_tone.get_mistakes_and_text) ---
         mistakes_lines, corrected_text, correction_spans = get_grammar_corrections(full_text)
         
@@ -138,29 +144,32 @@ async def upload_video(file: UploadFile = File(...)):
         
         corrected_transcript_with_highlights = highlighted_text
 
+        logger.info("Analyzing parts of speech")
         # Analyze parts of speech
         parts_of_speech_dict = parts_of_speech.parts_of_speech(full_text)
         
+        logger.info("Analyzing rate of speech")
         # Calculate rate of speech points over time
         rate_of_speech_points = rate_of_speech.get_rate_of_speech(timestamped_transcript_by_words)
         
+        logger.info("Getting volume")
         # Get volume (RMS) points over time
         volume_points_list = read_volume.get_rms_per_segment(audio_path)
         volume_points = {str(ts): float(rms) for ts, rms in volume_points_list}
         
+        logger.info("Getting tone")
         # Analyze custom tones (Grammarly-like, now using Sapling)
         custom_tone_results = sapling.get_tone(full_text)
 
+        logger.info("Looking at hands")
         # Analyze hand positions
         hand_position_results_dict = pose_tracking.analyze_hand_positions(file_path)
         hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
 
+        logger.info("Getting gaze and face info")
         # OpenFace analysis
         gaze_x, gaze_y, aus_sum = openface.return_numbers(file_path)
-
-        # Return all analysis results as JSON
-        return JSONResponse(content={
-            "word_count": word_count,
+        json_content = {"word_count": word_count,
             "parts_of_speech": parts_of_speech_dict,
             "rate_of_speech_points": rate_of_speech_points,
             "volume_points": volume_points,
@@ -173,7 +182,9 @@ async def upload_video(file: UploadFile = File(...)):
             "gaze_angle_x": gaze_x,
             "gaze_angle_y": gaze_y,
             "all_aus_sum": aus_sum,
-        })
+                        }
+        # Return all analysis results as JSON
+        return JSONResponse(content=json_content)
     except Exception as e:
         # Log the error for debugging purposes (consider using a proper logging library like 'logging')
         logger.error(f"Error processing video: {e}", exc_info=True)
