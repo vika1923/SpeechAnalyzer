@@ -1,9 +1,15 @@
-from fastapi import FastAPI, File, UploadFile # type: ignore
+from fastapi import FastAPI, File, UploadFile, BackgroundTasks, HTTPException, Form # type: ignore
 from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from fastapi.responses import JSONResponse # type: ignore
 import os
 import shutil
 import logging
+import uuid
+import asyncio
+import concurrent.futures
+import threading
+from typing import Dict, Optional
+import aiofiles
 import video_to_vaw
 import speech_to_text
 import insert_punctuation
@@ -13,7 +19,13 @@ import rate_of_speech
 from done_with_some_llm import grammar_tone, sapling
 # from gramformer import Gramformer # Import Gramformer
 import pose_tracking
-import openface
+# import openface  # Removed - not needed
+
+# --- Job Storage ---
+jobs: Dict[str, Dict] = {}
+
+# Create a thread pool executor for CPU-intensive tasks
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 
 # Initialize Gramformer globally
 # models=1 for corrector (default), models=2 for detector
@@ -39,15 +51,20 @@ origins = [
     "http://localhost:3000",
     "http://localhost:3001", # Frontend running on port 3001
     "http://localhost:3002",
-    "http://commai.online" # Your frontend's common development port
+    "http://commai.online",
+    "https://commai.online",
+    "https://www.commai.online",
+    "http://www.commai.online",
+    "*"  # Allow all origins for debugging - remove in production
     # Add other origins if your frontend might be hosted elsewhere later
 ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # --- Grammar Correction Helper Functions ---
@@ -67,49 +84,46 @@ def get_grammar_corrections(text: str):
         correction_spans = []
     return mistakes_lines, corrected_text, correction_spans
 
-# --- FastAPI Routes ---
-
-@app.post("/api/upload")
-async def upload_video(file: UploadFile = File(...)):
+def process_video_analysis_sync(job_id: str, file_path: str):
     """
-    Handles video file uploads, processes them for speech analysis,
-    and returns various metrics including grammar correction.
+    Synchronous video processing function that runs in a separate thread.
     """
-    logger.info(f"upload_video called with file: {file.filename}")
-    upload_dir = "uploaded_videos"
-    os.makedirs(upload_dir, exist_ok=True) # Ensure the directory exists
-    if file.filename is None:
-        raise Exception("Filename is None in api/upload")
-    file_path = os.path.join(upload_dir, file.filename)
-    audio_path = None # Initialize audio_path to None for cleanup in finally block
-
+    logger.info(f"Starting thread processing for job {job_id}")
+    audio_path = None
+    
     try:
-        # Save the uploaded file
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-        logger.info("Converting to video to audio")
+        # Update job status to processing
+        jobs[job_id]["status"] = "processing"
+        jobs[job_id]["progress"] = 10
+        
+        logger.info("Converting video to audio")
         # Convert video to WAV audio
         audio_path = video_to_vaw.convert_video_to_wav(file_path)
         logger.info(f"Audio path: {audio_path}")
         if audio_path is None:
-            return JSONResponse(status_code=400, content={"error": "No audio track found in video or conversion failed."})
+            jobs[job_id]["status"] = "failed"
+            jobs[job_id]["error"] = "No audio track found in video or conversion failed."
+            return
+        
+        jobs[job_id]["progress"] = 20
 
         logger.info("Transcribing")
         # Transcribe speech to words with timestamps
         timestamped_transcript_by_words = speech_to_text.speech_to_words(audio_path=audio_path)
+        jobs[job_id]["progress"] = 30
         
         logger.info("Counting words")
         # Calculate word count
         word_count = rate_of_speech.count_words(timestamped_transcript_by_words)
         
         # Combine words into a single unpunctuated string
-        # FIX: Changed 'timestamped_transcript_by_items' to 'timestamped_transcript_by_words'
         full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words.items())
+        jobs[job_id]["progress"] = 40
         
         logger.info("Adding punctuation")
         # Add punctuation to the full text
         full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
+        jobs[job_id]["progress"] = 50
         
         logger.info("Getting grammar corrections")
         # --- Grammar Correction (now using grammar_tone.get_mistakes_and_text) ---
@@ -144,10 +158,12 @@ async def upload_video(file: UploadFile = File(...)):
                 grammar_mistakes.append([[0, 0], line, line])
         
         corrected_transcript_with_highlights = highlighted_text
+        jobs[job_id]["progress"] = 60
 
         logger.info("Analyzing parts of speech")
         # Analyze parts of speech
         parts_of_speech_dict = parts_of_speech.parts_of_speech(full_text)
+        jobs[job_id]["progress"] = 70
         
         logger.info("Analyzing rate of speech")
         # Calculate rate of speech points over time
@@ -157,6 +173,7 @@ async def upload_video(file: UploadFile = File(...)):
         # Get volume (RMS) points over time
         volume_points_list = read_volume.get_rms_per_segment(audio_path)
         volume_points = {str(ts): float(rms) for ts, rms in volume_points_list}
+        jobs[job_id]["progress"] = 80
         
         logger.info("Getting tone")
         # Analyze custom tones (Grammarly-like, now using Sapling)
@@ -166,33 +183,351 @@ async def upload_video(file: UploadFile = File(...)):
         # Analyze hand positions
         hand_position_results_dict = pose_tracking.analyze_hand_positions(file_path)
         hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
+        jobs[job_id]["progress"] = 90
 
-        logger.info("Getting gaze and face info")
-        # OpenFace analysis
-        gaze_x, gaze_y, aus_sum = openface.return_numbers(file_path)
-        json_content = {"word_count": word_count,
+        # OpenFace removed - not needed
+        # gaze_x, gaze_y, aus_sum = 0.0, 0.0, 0.0
+        
+        # Prepare final results
+        json_content = {
+            "word_count": word_count,
             "parts_of_speech": parts_of_speech_dict,
             "rate_of_speech_points": rate_of_speech_points,
             "volume_points": volume_points,
             "tone_scores": custom_tone_results,
             "custom_tone_results": custom_tone_results,
             "transcript": full_text,
-            "corrected_transcript": corrected_transcript_with_highlights, # Send the highlighted text
-            "grammar_mistakes": grammar_mistakes,                       # Send parsed mistakes
+            "corrected_transcript": corrected_transcript_with_highlights,
+            "grammar_mistakes": grammar_mistakes,
             "hand_position_results": hand_position_results_text,
-            "gaze_angle_x": gaze_x,
-            "gaze_angle_y": gaze_y,
-            "all_aus_sum": aus_sum,
-                        }
-        # Return all analysis results as JSON
-        return JSONResponse(content=json_content)
+        }
+        
+        # Update job with results
+        jobs[job_id]["status"] = "completed"
+        jobs[job_id]["progress"] = 100
+        jobs[job_id]["results"] = json_content
+        jobs[job_id]["completed_at"] = str(threading.current_thread().ident)
+        
+        logger.info(f"Job {job_id} completed successfully")
+            
     except Exception as e:
-        # Log the error for debugging purposes (consider using a proper logging library like 'logging')
-        logger.error(f"Error processing video: {e}", exc_info=True)
-        return JSONResponse(status_code=500, content={"error": f"An error occurred during processing: {str(e)}"})
+        logger.error(f"Error processing video for job {job_id}: {e}", exc_info=True)
+        jobs[job_id]["status"] = "failed"
+        jobs[job_id]["error"] = str(e)
     finally:
         # Clean up temporary files
         if os.path.exists(file_path):
             os.remove(file_path)
-        if audio_path and os.path.exists(audio_path): # Ensure audio_path was successfully assigned before trying to remove
+        if audio_path and os.path.exists(audio_path):
             os.remove(audio_path)
+
+async def process_video_analysis(job_id: str, file_path: str):
+    """
+    Async wrapper that runs the sync processing in a thread pool.
+    """
+    logger.info(f"Starting async wrapper for job {job_id}")
+    
+    # Run the CPU-intensive work in a separate thread
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(executor, process_video_analysis_sync, job_id, file_path)
+
+# --- FastAPI Routes ---
+
+@app.options("/api/upload")
+async def upload_options():
+    """Handle preflight CORS requests"""
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Max-Age": "3600"
+    }
+    return JSONResponse(content={"message": "OK"}, headers=headers)
+
+@app.post("/api/start-upload")
+async def start_upload(filename: str = Form(...), file_size: int = Form(...)):
+    """
+    Initialize an upload session and return job ID immediately.
+    """
+    logger.info(f"start_upload called with filename: {filename}, size: {file_size}")
+    
+    if not filename:
+        raise HTTPException(status_code=400, detail="Filename is required")
+    
+    # Check file size (limit to 500MB)
+    max_size = 500 * 1024 * 1024  # 500MB
+    if file_size > max_size:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 500MB.")
+    
+    # Generate unique job ID
+    job_id = str(uuid.uuid4())
+    
+    # Initialize job in storage
+    jobs[job_id] = {
+        "status": "waiting_for_upload",
+        "progress": 0,
+        "filename": filename,
+        "file_size": file_size,
+        "uploaded_bytes": 0,
+        "created_at": str(asyncio.get_event_loop().time())
+    }
+    
+    logger.info(f"Created upload session for job {job_id}")
+    
+    return JSONResponse(content={
+        "job_id": job_id,
+        "status": "ready",
+        "message": "Upload session created. You can now upload the file."
+    })
+
+@app.post("/api/upload/{job_id}")
+async def upload_video_chunk(job_id: str, background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    """
+    Upload video file for a specific job and start processing.
+    """
+    logger.info(f"upload_video_chunk called for job {job_id}")
+    
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    job = jobs[job_id]
+    if job["status"] != "waiting_for_upload":
+        raise HTTPException(status_code=400, detail="Job is not ready for upload")
+    
+    upload_dir = "uploaded_videos"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Save file with job_id prefix to avoid conflicts
+    file_path = os.path.join(upload_dir, f"{job_id}_{job['filename']}")
+    
+    try:
+        # Update status to uploading
+        jobs[job_id]["status"] = "uploading"
+        jobs[job_id]["progress"] = 1
+        
+        # Save file with a timeout and smaller chunks
+        logger.info(f"Starting file save for job {job_id}")
+        
+        async with aiofiles.open(file_path, "wb") as buffer:
+            # Use smaller chunks and timeout
+            chunk_size = 256 * 1024  # 256KB chunks
+            total_bytes = 0
+            start_time = asyncio.get_event_loop().time()
+            
+            while True:
+                try:
+                    chunk = await asyncio.wait_for(file.read(chunk_size), timeout=10.0)
+                    if not chunk:
+                        break
+                    await buffer.write(chunk)
+                    total_bytes += len(chunk)
+                    
+                    # Update progress
+                    if job["file_size"] > 0:
+                        progress = min(int((total_bytes / job["file_size"]) * 80), 80)  # Up to 80% for upload
+                        jobs[job_id]["progress"] = progress
+                        jobs[job_id]["uploaded_bytes"] = total_bytes
+                    
+                    # Yield control more frequently
+                    if total_bytes % (chunk_size * 4) == 0:  # Every 1MB
+                        await asyncio.sleep(0.001)
+                        
+                except asyncio.TimeoutError:
+                    logger.error(f"Timeout reading chunk for job {job_id}")
+                    break
+            
+            elapsed = asyncio.get_event_loop().time() - start_time
+            logger.info(f"File save completed for job {job_id}: {total_bytes} bytes in {elapsed:.2f}s")
+        
+        # Update job status after upload
+        jobs[job_id]["status"] = "uploaded"
+        jobs[job_id]["progress"] = 5
+        jobs[job_id]["uploaded_bytes"] = total_bytes
+        
+        # Start processing in background
+        background_tasks.add_task(process_video_analysis, job_id, file_path)
+        
+        logger.info(f"Started processing for job {job_id}")
+        
+        return JSONResponse(content={
+            "status": "processing",
+            "job_id": job_id,
+            "message": "File uploaded successfully. Processing started."
+        })
+        
+    except Exception as e:
+        logger.error(f"Error uploading file for job {job_id}: {e}", exc_info=True)
+        jobs[job_id]["status"] = "failed"
+        jobs[job_id]["error"] = f"Upload failed: {str(e)}"
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+@app.post("/api/upload")
+async def upload_video_immediate(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+    """
+    Read file during request, process in background.
+    """
+    logger.info(f"Upload called with file: {file.filename}")
+    
+    if file.filename is None:
+        raise HTTPException(status_code=400, detail="Filename is required")
+    
+    # Generate unique job ID
+    job_id = str(uuid.uuid4())
+    
+    # Initialize job
+    jobs[job_id] = {
+        "status": "uploading",
+        "progress": 1,
+        "filename": file.filename,
+        "created_at": str(asyncio.get_event_loop().time())
+    }
+    
+    try:
+        # Read file content DURING the request (while file stream is open)
+        logger.info(f"Reading file content for job {job_id}")
+        file_content = await file.read()
+        logger.info(f"File content read: {len(file_content)} bytes")
+        
+        # Define processing function that uses the already-read content
+        async def save_and_process():
+            upload_dir = "uploaded_videos"
+            os.makedirs(upload_dir, exist_ok=True)
+            file_path = os.path.join(upload_dir, f"{job_id}_{file.filename}")
+            
+            try:
+                # Save to disk using the content we already read
+                async with aiofiles.open(file_path, "wb") as buffer:
+                    await buffer.write(file_content)
+                
+                logger.info(f"File saved for job {job_id}: {len(file_content)} bytes")
+                
+                # Update status and start processing
+                jobs[job_id]["status"] = "uploaded"
+                jobs[job_id]["progress"] = 5
+                
+                # Process the video
+                await process_video_analysis(job_id, file_path)
+                
+            except Exception as e:
+                logger.error(f"Processing failed for job {job_id}: {e}")
+                jobs[job_id]["status"] = "failed"
+                jobs[job_id]["error"] = str(e)
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+        
+        # Start background task
+        background_tasks.add_task(save_and_process)
+        
+        # Return immediately after reading file
+        logger.info(f"Returning response for job {job_id}")
+        return JSONResponse(content={
+            "status": "processing", 
+            "job_id": job_id,
+            "message": "File received. Processing started."
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to read file for job {job_id}: {e}")
+        jobs[job_id]["status"] = "failed"
+        jobs[job_id]["error"] = f"Failed to read file: {str(e)}"
+        raise HTTPException(status_code=500, detail=f"Failed to read file: {str(e)}")
+
+@app.options("/api/job/{job_id}")
+async def job_status_options(job_id: str):
+    """Handle preflight CORS requests for job status"""
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Max-Age": "3600"
+    }
+    return JSONResponse(content={"message": "OK"}, headers=headers)
+
+@app.get("/api/job/{job_id}")
+async def get_job_status(job_id: str):
+    """
+    Returns the current status and results of a job.
+    """
+    # Add explicit CORS headers
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "*"
+    }
+    
+    if job_id not in jobs:
+        return JSONResponse(
+            content={"status": "error", "error": "Job not found"}, 
+            status_code=404,
+            headers=headers
+        )
+    
+    job = jobs[job_id]
+    
+    if job["status"] == "completed":
+        return JSONResponse(content={
+            "status": "completed",
+            "progress": 100,
+            "results": job["results"]
+        }, headers=headers)
+    elif job["status"] == "failed":
+        return JSONResponse(content={
+            "status": "failed",
+            "error": job.get("error", "Unknown error")
+        }, headers=headers)
+    else:
+        return JSONResponse(content={
+            "status": job["status"],
+            "progress": job.get("progress", 0)
+        }, headers=headers)
+
+@app.options("/api/jobs")
+async def jobs_options():
+    """Handle preflight CORS requests for jobs list"""
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Max-Age": "3600"
+    }
+    return JSONResponse(content={"message": "OK"}, headers=headers)
+
+@app.get("/api/jobs")
+async def list_jobs():
+    """
+    Returns a list of all jobs (for debugging and fallback).
+    """
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "*"
+    }
+    
+    # Return jobs without results for performance
+    jobs_summary = {job_id: {k: v for k, v in job.items() if k != "results"} for job_id, job in jobs.items()}
+    
+    return JSONResponse(content={"jobs": jobs_summary}, headers=headers)
+
+@app.get("/api/health")
+async def health_check():
+    """
+    Simple health check endpoint.
+    """
+    return {"status": "healthy", "jobs_count": len(jobs), "timestamp": asyncio.get_event_loop().time()}
+
+@app.get("/api/test-cors")
+async def test_cors():
+    """
+    Test CORS configuration.
+    """
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS", 
+        "Access-Control-Allow-Headers": "*"
+    }
+    return JSONResponse(
+        content={"message": "CORS test successful", "timestamp": asyncio.get_event_loop().time()},
+        headers=headers
+    )

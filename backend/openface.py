@@ -53,10 +53,11 @@ def return_numbers(file_path, openface_path='/opt/OpenFace/build/bin/FeatureExtr
         out = get_gaze_and_aus(temp_dir+"/video.csv") # add stuff
         result = (out['gaze_angle_x'], out['gaze_angle_y'], get_all_aus_sum(out))
         logging.info(f"return_numbers({file_path}) returns: {result}")
+        return result
     except Exception as e:
         logging.error(f"return_numbers({file_path}) failed: {e}")
-        return (None, None, None)
-    return result
+        # Return default values instead of None to avoid breaking the pipeline
+        return (0.0, 0.0, 0.0)
 
 if __name__ == "__main__":
     print("Hello")

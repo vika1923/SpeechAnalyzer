@@ -17,9 +17,6 @@ interface AnalysisResults {
   grammar_mistakes: [[number, number], string, string][];
   custom_tone_results: [number, string, string][];
   hand_position_results: string;
-  gaze_angle_x?: number;
-  gaze_angle_y?: number;
-  all_aus_sum?: number;
 }
 
 export default function ResultsDisplay({ results }: { results: AnalysisResults }) {
@@ -229,22 +226,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
         </motion.div>
       )}
 
-      {/* OpenFace Gaze & AU Analysis */}
-      { results.gaze_angle_x && results.gaze_angle_y && results.all_aus_sum && (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 1.0 }}
-        className="border-card border-pink-500 bg-pink-50 p-6 shadow-xl rounded-xl"
-      >
-        <h3 className="font-display text-xl text-pink-700 mb-4">OpenFace Gaze & AU Analysis</h3>
-        <div className="font-body text-gray-800 space-y-2">
-          <div><span className="font-semibold">Gaze Angle X:</span> {results.gaze_angle_x?.toFixed(3)}</div>
-          <div><span className="font-semibold">Gaze Angle Y:</span> {results.gaze_angle_y?.toFixed(3)}</div>
-          <div><span className="font-semibold">Sum of All AU Diffs:</span> {results.all_aus_sum?.toFixed(3)}</div>
-        </div>
-      </motion.div>
-      )}
+      {/* OpenFace section removed - not needed */}
     </motion.div>
   );
 } 

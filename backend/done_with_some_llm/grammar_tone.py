@@ -56,7 +56,7 @@ Example output:
         "max_tokens": 500
     }
 
-    response = requests.post(url, headers=headers, json=payload, timeout=30)
+    response = requests.post(url, headers=headers, json=payload, timeout=60)
     logger.info(f"Raw response text from OpenRouter: {response.text}")
     
     data = response.json()
