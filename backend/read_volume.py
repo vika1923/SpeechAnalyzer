@@ -39,6 +39,29 @@ def get_rms_per_segment(audio_location: str, segment_duration_sec: float=2):
         logger.error(f"Error in get_rms_per_segment for {audio_location}: {e}", exc_info=True)
         raise
 
+def assign_volume_points(volume:float):
+    if volume < 30:
+        return 0
+    elif volume < 37:
+        return 1
+    elif volume < 43:
+        return 2
+    elif volume < 48:
+        return 3
+    elif volume < 53:
+        return 4
+    elif volume < 58:
+        return 5
+    elif volume < 64:
+        return 6
+    elif volume < 70:
+        return 7
+    elif volume < 78:
+        return 8
+    elif volume < 85:
+        return 9
+    else:
+        return 10
 # path = "video_audios/scream.wav"
 # segments = get_rms_per_segment(audio_location=path, segment_duration_sec=3)
 

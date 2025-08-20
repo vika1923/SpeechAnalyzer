@@ -1,7 +1,7 @@
 import requests
 import os
 import sys
-sys.path.append('..')  # Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -26,7 +26,7 @@ def get_tone(text: str) -> list:
         oval = data.get("overall", []) # Safely get 'overall', default to empty list
         if not oval:
             logger.warning("Sapling API returned an empty 'overall' analysis.")
-        
+
         logger.info("Successfully retrieved tone from Sapling.")
         return oval
 

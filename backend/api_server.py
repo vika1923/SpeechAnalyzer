@@ -12,7 +12,6 @@ import aiofiles
 from logger import get_logger
 import video_to_vaw
 import speech_to_text
-import insert_punctuation
 import parts_of_speech
 import read_volume
 import rate_of_speech
@@ -114,7 +113,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         
         logger.info("Adding punctuation")
         # Add punctuation to the full text
-        full_text = insert_punctuation.get_punctuated_text(full_unpunctuated_text)
+        full_text = full_unpunctuated_text
         jobs[job_id]["progress"] = 50
         
         logger.info("Getting grammar corrections")
@@ -124,6 +123,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # For highlighting, wrap the corrected spans in <c> tags
         highlighted_text = corrected_text
         # Sort spans in reverse order to avoid messing up indices
+        start, end = 0, 0
         for start, end in sorted(correction_spans, reverse=True):
             highlighted_text = (
                 highlighted_text[:start] +
