@@ -1,14 +1,10 @@
 import requests
 import os
-import logging
+import sys
+sys.path.append('..')  # Add parent directory to path
+from logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 key = os.getenv("SAPLING_KEY")
 

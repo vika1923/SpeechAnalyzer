@@ -1,14 +1,8 @@
 import numpy as np
 from scipy.io import wavfile
-import logging
+from logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def get_rms_per_segment(audio_location: str, segment_duration_sec: float=2):
     logger.info(f"get_rms_per_segment called for {audio_location}")

@@ -1,6 +1,8 @@
 import subprocess 
 import polars as pl
-import logging
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 def extract_video(file_path, out_dir, file_name = "video", openface_path='/opt/OpenFace/build/bin/FeatureExtraction'): 
     subprocess.run([
@@ -45,17 +47,16 @@ def get_all_aus_sum(dick):
     return sum
 
 def return_numbers(file_path, openface_path='/opt/OpenFace/build/bin/FeatureExtraction', temp_dir = "app/videos/openface"):
-    logging.basicConfig(level=logging.INFO)
     try:
         # temp_dir = "/app/videos/openface"  # Use absolute path that exists in container
         extract_video(file_path, temp_dir, openface_path=openface_path)
         print("No")
         out = get_gaze_and_aus(temp_dir+"/video.csv") # add stuff
         result = (out['gaze_angle_x'], out['gaze_angle_y'], get_all_aus_sum(out))
-        logging.info(f"return_numbers({file_path}) returns: {result}")
+        logger.info(f"return_numbers({file_path}) returns: {result}")
         return result
     except Exception as e:
-        logging.error(f"return_numbers({file_path}) failed: {e}")
+        logger.error(f"return_numbers({file_path}) failed: {e}")
         # Return default values instead of None to avoid breaking the pipeline
         return (0.0, 0.0, 0.0)
 

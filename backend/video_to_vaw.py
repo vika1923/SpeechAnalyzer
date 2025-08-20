@@ -1,15 +1,9 @@
 import os
 from moviepy.editor import VideoFileClip
-import logging
 from typing import Optional
+from logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def convert_video_to_wav(video_path: str) -> Optional[str]:
     """Convert a video file to WAV format and save in video_audios/ folder."""

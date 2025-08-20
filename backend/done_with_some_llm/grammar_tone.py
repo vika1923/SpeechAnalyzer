@@ -1,18 +1,14 @@
 import requests
 import os
 import json
-import logging
+import sys
+sys.path.append('..')  # Add parent directory to path
+from logger import get_logger
 # import rotateapikeys
 
 # 2. assess the text on scale from 1 to 10 for the following categories: confident, assertive, inspirational, informative, direct.
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 API_KEY = os.getenv("OR_API_KEY")
 logger.info(f"OR_API_KEY: {'Set' if API_KEY else 'Not set'}")
@@ -29,13 +25,13 @@ def fix_grammar(prompt, model=almaz):
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
-    payload = {
+    payload = { # TODO: add better prompt here
         "model": model,
         "messages": [
             {"role": "system", "content":"""You are a professional public speaking assessor. You will be given a part of a public speech transcript. Your task is to:
-    1. correct all the grammar mistakes, excluding punctuation mistakes.
-    2. correct all the semantic mistakes (fix misused words and transitions).
-    3. correct malapropisms and misused words.
+    1. Correct all the grammar mistakes, excluding punctuation mistakes.
+    2. Correct all the semantic mistakes (fix misused words and transitions).
+    3. Correct malapropisms and misused words.
 
 IMPORTANT: You must provide the actual corrections, not just a header. For each mistake you find:
     - Format it as: "<incorrect_phrase> should be <correct_phrase>"
@@ -43,7 +39,7 @@ IMPORTANT: You must provide the actual corrections, not just a header. For each 
     - If no mistakes are found, say "No corrections needed"
     - Only output the corrected mistakes and the corrected text.
 
-After You listed all the mistakes, output the corrected text itself.
+After you listed all the mistakes, output the corrected text itself.
 
 
 Example output:
@@ -60,6 +56,8 @@ Example output:
     logger.info(f"Raw response text from OpenRouter: {response.text}")
     
     data = response.json()
+    if "choices" not in data:
+        return ""
     content = data["choices"][0]["message"]["content"]
     return content
 

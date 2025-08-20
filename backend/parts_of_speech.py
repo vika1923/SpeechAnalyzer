@@ -2,15 +2,9 @@ from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 from typing import Dict, List
 from custom_types import PartOfSpeech
-import logging
+from logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 POS_MARKINGS = {
     'VERB' : 'Verbs',

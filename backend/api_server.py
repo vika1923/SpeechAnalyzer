@@ -3,13 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware # type: ignore
 from fastapi.responses import JSONResponse # type: ignore
 import os
 import shutil
-import logging
 import uuid
 import asyncio
 import concurrent.futures
 import threading
 from typing import Dict, Optional
 import aiofiles
+from logger import get_logger
 import video_to_vaw
 import speech_to_text
 import insert_punctuation
@@ -33,15 +33,7 @@ executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 # gf = Gramformer(models=1, use_gpu=False)
 
 # --- Logging Setup ---
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('api_server.log', mode='a'),
-        logging.StreamHandler()  # This outputs to console
-    ]
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 app = FastAPI()
 

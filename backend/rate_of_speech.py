@@ -1,14 +1,8 @@
 from typing import Tuple, Dict, List
 from custom_types import TimeStamp
-import logging
+from logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def get_rate_of_speech(words: Dict[TimeStamp, str], interval: float = 10.) -> List[Tuple[float, float]]:
     logger.info("get_rate_of_speech called")
