@@ -39,7 +39,7 @@ export default function Results() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex flex-col items-center p-4 sm:p-8 font-inter">
-      <header className="w-full max-w-6xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
+      <header className="w-full max-w-9xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
         <a href="/" className="text-white text-2xl font-bold font-display">
           Speech Analyzer
         </a>
@@ -53,8 +53,8 @@ export default function Results() {
         </nav>
       </header>
       
-      <main className="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
-        <div className="w-full md:w-1/2 lg:w-1/2 mx-auto">
+      <main className="w-full  max-w-full px-4 py-8 flex-grow flex flex-col items-center justify-center">
+        <div className="w-full mx-auto">
           <h1 className="text-4xl font-bold mb-6 text-white text-center">Analysis Results</h1>
           {error && <p className="text-red-300 text-center">{error}</p>}
           {results ? (

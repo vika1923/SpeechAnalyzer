@@ -19,21 +19,20 @@ def get_rms_per_segment(audio_location: str, segment_duration_sec: float=2):
 
         results = []
 
-        first_sample = None
-
         for i in range(num_segments):
             start = i * segment_samples
             end = start + segment_samples
             segment = data[start:end]
             rms = np.sqrt(np.mean(segment**2))
-            if i == 0:
-                first_sample = rms.item() if rms.item() != 0 else 1e-8  # avoid division by zero
+            # Avoid log(0) by setting a minimum value
+            if rms == 0:
+                db = -np.inf
+            else:
+                db = 20 * np.log10(rms)
             timestamp = i * segment_duration_sec
-            normalized_rms = rms.item() / first_sample if first_sample else 0.0
-            results.append((timestamp, normalized_rms))
+            results.append((timestamp, db))
         
-        # print("RESULTS FROM READVOLUMEPY:", results)
-        logger.info(f"Successfully calculated RMS for {audio_location}")
+        logger.info(f"Successfully calculated dB for {audio_location}")
         return results
     except Exception as e:
         logger.error(f"Error in get_rms_per_segment for {audio_location}: {e}", exc_info=True)
