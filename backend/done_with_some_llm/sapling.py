@@ -37,5 +37,6 @@ def get_tone(text: str) -> list:
         logger.error(f"An unexpected error occurred in get_tone: {e}", exc_info=True)
         return [] # Return empty list on other errors
 
-# print(get_tone("We are bad at this. What if it dies??? It is your responsibility to look after it"))
-# print(get_tone("Wow—what a time to be alive! Every day brings new possibilities, unexpected opportunities, and the thrill of building something meaningful. The energy in the air is electric. We’re on the edge of something big, and it feels like anything is possible. Challenges? Sure—but they’re just stepping stones. The future is bright, and we’re racing toward it full speed, eyes wide open, hearts on fire. Let’s go!"))
+if __name__ == "__main__":
+    print(get_tone("We are bad at this. What if it dies??? It is your responsibility to look after it"))
+    print(get_tone("Wow—what a time to be alive! Every day brings new possibilities, unexpected opportunities, and the thrill of building something meaningful. The energy in the air is electric. We’re on the edge of something big, and it feels like anything is possible. Challenges? Sure—but they’re just stepping stones. The future is bright, and we’re racing toward it full speed, eyes wide open, hearts on fire. Let’s go!"))
