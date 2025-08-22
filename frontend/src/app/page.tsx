@@ -310,37 +310,45 @@ export default function App() {
                        "Click the microphone to upload your video";
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex flex-col items-center justify-center p-4 sm:p-8 font-inter">
-      <header className="w-full max-w-6xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
-        <a href="#" className="text-white text-2xl font-bold font-display">
+    <div className="relative overflow-hidden min-h-screen w-full bg-[#dbc7fe] flex flex-col items-center justify-center p-4 sm:p-8 font-inter">
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 
+              w-64 h-64 bg-[#80003a] rotate-45">
+      </div>
+
+      <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/2 
+                  w-64 h-64 bg-[#80003a] rotate-45">
+      </div>
+
+      <header className="relative w-full max-w-6xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
+        <a href="#" className="text-[#80003a] text-2xl font-bold font-display">
           Speech Analyzer
         </a>
         <nav className="space-x-4">
-          <a href="/about" className="text-white hover:text-blue-200 transition-colors">
+          <a href="/about" className="text-[#80003a] hover:text[#80003a] transition-colors">
             About
           </a>
-          <a href="/results" className="text-white hover:text-blue-200 transition-colors">
+          <a href="/results" className="text-[#80003a] hover:text[#80003a] transition-colors">
             Results
           </a>
         </nav>
       </header>
 
-      <main className="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
+      <main className="relative container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
         <div className="w-full md:w-1/2 lg:w-1/2 mx-auto">
           {/* Hero Section */}
           <motion.h1
             initial={{ opacity: 0, y: -30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-5xl md:text-7xl font-display text-white text-center mb-4 leading-tight"
+            className="text-5xl md:text-7xl font-display text-[#80003a] text-center mb-4 leading-tight"
           >
-            <span className="text-blue-200 text-highlight">Analyze Your Speech</span>
+            <span className="text-[#511b2c] text-highlight">Analyze Your Speech</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl md:text-2xl text-white text-center max-w-3xl mb-12"
+            className="text-xl md:text-2xl text-[#80003a] text-center max-w-3xl mb-12"
           >
             Get instant, AI-powered feedback on your spoken English. Upload a video and unlock your speaking potential.
           </motion.p>
@@ -417,7 +425,7 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="w-full max-w-6xl mx-auto text-center py-8 text-white text-sm">
+      <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-[#80003a] text-sm">
         &copy; {new Date().getFullYear()} Speech Analyzer. All rights reserved.
       </footer>
     </div>
