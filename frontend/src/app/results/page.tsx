@@ -55,14 +55,14 @@ export default function Results() {
       </div>
 
       <header className="relative w-full max-w-7xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
-        <a href="/" className="text-white text-2xl font-bold font-display">
+        <a href="/" className="text-[#80003a] text-2xl font-bold font-display">
           Speech Analyzer
         </a>
         <nav className="space-x-4">
-          <a href="/about" className="text-white hover:text-blue-200 transition-colors">
+          <a href="/about" className="text-[#80003a] hover:text-[#511b2c] transition-colors">
             About
           </a>
-          <a href="/results" className="text-white hover:text-blue-200 transition-colors">
+          <a href="/results" className="text-[#80003a] hover:text-[#511b2c] transition-colors">
             Results
           </a>
         </nav>
@@ -70,7 +70,7 @@ export default function Results() {
       
       <main className="relative w-full  max-w-full px-5 py-8 flex-grow flex flex-col items-center justify-center">
         <div className="w-full mx-auto">
-          <h1 className="text-4xl font-bold mb-6 text-white text-center">Analysis Results</h1>
+          <h1 className="text-4xl font-bold mb-6 text-[#80003a] text-center">Analysis Results</h1>
           {error && <p className="text-red-300 text-center">{error}</p>}
           {results ? (
             <>
@@ -87,12 +87,12 @@ export default function Results() {
               </div>
             </>
           ) : (
-            !error && <p className="text-white text-center">Loading results...</p>
+            !error && <p className="text-[#80003a] text-center">Loading results...</p>
           )}
         </div>
       </main>
 
-      <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-white text-sm">
+      <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-[#80003a] text-sm">
         &copy; {new Date().getFullYear()} Speech Analyzer. All rights reserved.
       </footer>
     </div>

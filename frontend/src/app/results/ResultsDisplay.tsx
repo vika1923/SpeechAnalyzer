@@ -29,7 +29,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       className="space-y-6 reveal w-full"
     >
       <div className='flex items-center justify-center pt-2'>
-        <h1 className='text-xl text-white'>Verbal part</h1>
+        <h1 className='text-xl text-[#80003a]'>Verbal part</h1>
       </div>
 
       {/* Grid for various analysis metrics */}
@@ -176,7 +176,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       </div>
 
       <div className='flex items-center justify-center pt-2'>
-        <h1 className='text-xl text-white'>Visual part</h1>
+        <h1 className='text-xl text-[#80003a]'>Visual part</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -280,7 +280,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
 
 
       <div className='flex items-center justify-center pt-2'>
-        <h1 className='text-xl text-white'>Text part</h1>
+        <h1 className='text-xl text-[#80003a]'>Text part</h1>
       </div>  
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
