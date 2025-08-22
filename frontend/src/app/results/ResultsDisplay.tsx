@@ -28,6 +28,9 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       transition={{ duration: 0.8 }}
       className="space-y-6 reveal w-full"
     >
+      <div className='flex items-center justify-center pt-2'>
+        <h1 className='text-xl text-white'>Verbal part</h1>
+      </div>
 
       {/* Grid for various analysis metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -172,6 +175,10 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
         </motion.div>
       </div>
 
+      <div className='flex items-center justify-center pt-2'>
+        <h1 className='text-xl text-white'>Visual part</h1>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
         {/* Rate of Speech Chart */}
@@ -270,6 +277,11 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
           <p className="text-3xl font-bold text-yellow-600">{results.word_count}</p>
         </motion.div>
       </div>
+
+
+      <div className='flex items-center justify-center pt-2'>
+        <h1 className='text-xl text-white'>Text part</h1>
+      </div>  
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
         {/* Original Transcript */}
