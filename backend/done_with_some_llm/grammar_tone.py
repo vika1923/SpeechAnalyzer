@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+from typing import Optional
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from logger import get_logger
@@ -16,10 +17,10 @@ logger.info(f"OR_API_KEY: {'Set' if API_KEY else 'Not set'}")
 # almaz = "meta-llama/llama-4-maverick:free"
 almaz = "deepseek/deepseek-chat-v3-0324:free"
 
-def fix_grammar(prompt, model=almaz):
+def fix_grammar(prompt, model=almaz) -> Optional[str]:
     if not API_KEY:
         return None
-        
+
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -54,7 +55,7 @@ Example output:
 
     response = requests.post(url, headers=headers, json=payload, timeout=60)
     logger.info(f"Raw response text from OpenRouter: {response.text}")
-    
+
     data = response.json()
     if "choices" not in data:
         return ""
@@ -65,20 +66,23 @@ Example output:
 def get_mistakes_and_text(text_to_check):
     if not API_KEY:
         return [], text_to_check, []
-    
+
     # EDIT!
     corrected_unparsed = fix_grammar(text_to_check)
-    
+
+    if corrected_unparsed is None:
+        return [], text_to_check, []
+
     corrected_unparsed = corrected_unparsed.strip()
 
     # corrected_unparsed = "\"despite this being a math -weighted technical major\" should be \"despite this being a math-heavy technical major\"\n\"it's called Nostrum of the Underground and it tells about Nostrum of the Underground\" should be \"it's called Notes from the Underground and it's about the Underground Man\"\n\nCorrected text:\nHello, my major is software engineering but despite this being a math-heavy technical major, I love reading. I have a lot of books right over here and my favorite author is Fyodor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? It's called Notes from the Underground and it's about the Underground Man."
-    
+
     mistakes_lines = []
     corrected_text = text_to_check
 
     lines = corrected_unparsed.splitlines()
     correction_spans = []
-    
+
     # Find where the corrected text starts
     corrected_text_start_idx = -1
     for i, line in enumerate(lines):
@@ -86,19 +90,19 @@ def get_mistakes_and_text(text_to_check):
         if line_lower.startswith("corrected text:") or line_lower == "corrected text":
             corrected_text_start_idx = i
             break
-    
+
     # Process only the correction lines (before "Corrected text:")
     lines_to_process = lines[:corrected_text_start_idx] if corrected_text_start_idx != -1 else lines
-    
+
     for line in lines_to_process:
         line = line.strip()
         if not line:
             continue
-            
+  
         # Only add lines that contain actual corrections
         if '"' in line and "should be" in line:
             mistakes_lines.append(line)
-            
+  
             first_quote = line.find('"')
             second_quote = line.find('"', first_quote + 1)
             incorrect_phrase = line[first_quote + 1:second_quote]
@@ -116,7 +120,7 @@ def get_mistakes_and_text(text_to_check):
                 correction_spans.append((idx, idx + len(correct_phrase)))
                 # Replace only the first occurrence in corrected_text
                 corrected_text = corrected_text[:idx] + correct_phrase + corrected_text[idx + len(incorrect_phrase):]
-    
+
     # Extract the actual corrected text if it exists
     if corrected_text_start_idx != -1 and corrected_text_start_idx + 1 < len(lines):
         # Get all lines after "Corrected text:" and join them
@@ -127,6 +131,6 @@ def get_mistakes_and_text(text_to_check):
 
     return mistakes_lines, corrected_text, correction_spans
 
-# t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
-
-# print(get_mistakes_and_text("Hello, my major is software engineering but despite this being a math -weighted technical major, I love reading. I have a lot of books right over here and my favorite author is Fedor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? it's called Nostrum of the Underground and it tells about Nostrum of the Underground."))
+if __name__ == "__main__":
+    t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
+    print(get_mistakes_and_text("Hello, my major is software engineering but despite this being a math -weighted technical major, I love reading. I have a lot of books right over here and my favorite author is Fedor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? it's called Nostrum of the Underground and it tells about Nostrum of the Underground."))
