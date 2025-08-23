@@ -4,6 +4,9 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 from mediapipe.framework.formats import landmark_pb2
 import os
+import numpy as np
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 
 # Use relative path from the script's directory
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -47,6 +50,105 @@ def calculate_symmetry_points(landmarks):
     point3 = (vertical_symmetry_x, ((landmark_23_y+landmark_24_y)/2) * 0.95)  # Vertical symmetry line x, landmark 23 y
     
     return vertical_symmetry_x, point1, point2, point3
+
+def create_hand_triangle(landmarks, hand_landmark_indices):
+    """
+    Create a triangle from hand landmarks.
+    
+    Args:
+        landmarks: List of pose landmarks
+        hand_landmark_indices: List of 3 landmark indices for the hand [21, 19, 17] or [22, 20, 18]
+        
+    Returns:
+        Polygon: Shapely polygon representing the hand triangle, or None if landmarks are missing
+    """
+    if len(landmarks) <= max(hand_landmark_indices):
+        return None
+    
+    # Extract coordinates for the hand landmarks
+    hand_points = []
+    for idx in hand_landmark_indices:
+        hand_points.append((landmarks[idx].x, landmarks[idx].y))
+    
+    try:
+        # Create polygon from the 3 points
+        return Polygon(hand_points)
+    except:
+        # Return None if polygon creation fails (e.g., invalid coordinates)
+        return None
+
+def calculate_triangle_intersection_percentage(triangle1, triangle2, reference_landmark_prev, reference_landmark_curr):
+    """
+    Calculate the intersection percentage between two triangles after "clipping" one landmark.
+    
+    Args:
+        triangle1: Previous frame triangle (Shapely Polygon)
+        triangle2: Current frame triangle (Shapely Polygon)
+        reference_landmark_prev: Previous frame reference landmark coordinates (x, y)
+        reference_landmark_curr: Current frame reference landmark coordinates (x, y)
+        
+    Returns:
+        float: Intersection percentage (0-100)
+    """
+    if triangle1 is None or triangle2 is None:
+        return 0.0
+    
+    try:
+        # Calculate the translation needed to "clip" the reference landmarks
+        dx = reference_landmark_curr[0] - reference_landmark_prev[0]
+        dy = reference_landmark_curr[1] - reference_landmark_prev[1]
+        
+        # Translate triangle1 to align the reference landmarks
+        from shapely.affinity import translate
+        triangle1_aligned = translate(triangle1, xoff=dx, yoff=dy)
+        
+        # Calculate intersection
+        intersection = triangle1_aligned.intersection(triangle2)
+        
+        # Calculate areas
+        intersection_area = intersection.area if intersection.area > 0 else 0
+        union_area = triangle1_aligned.union(triangle2).area
+        
+        # Calculate percentage difference (100 - intersection percentage)
+        if union_area > 0:
+            intersection_percentage = (intersection_area / union_area) * 100
+            difference_percentage = 100 - intersection_percentage
+            return difference_percentage
+        else:
+            return 0.0
+            
+    except Exception as e:
+        # Return 0 if calculation fails
+        return 0.0
+
+def calculate_normalized_hand_distance(landmarks, point1, point2):
+    """
+    Calculate the normalized distance between landmarks 15 and 16.
+    
+    Args:
+        landmarks: List of pose landmarks
+        point1: First reference point (x, y)
+        point2: Second reference point (x, y)
+        
+    Returns:
+        float: Normalized distance between landmarks 15 and 16, or None if landmarks missing
+    """
+    if len(landmarks) <= 16 or point1 is None or point2 is None:
+        return None
+    
+    # Calculate distance between landmarks 15 and 16
+    hand_distance = ((landmarks[15].x - landmarks[16].x) ** 2 + 
+                     (landmarks[15].y - landmarks[16].y) ** 2) ** 0.5
+    
+    # Calculate normalization constant (distance between point1 and point2)
+    normalization_constant = ((point1[0] - point2[0]) ** 2 + 
+                             (point1[1] - point2[1]) ** 2) ** 0.5
+    
+    # Return normalized distance
+    if normalization_constant > 0:
+        return hand_distance / normalization_constant
+    else:
+        return None
 
 def categorize_hand_position(hand_x, hand_y, point1, point2, point3):
     """
@@ -96,6 +198,25 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
         "ddr": 0   # down-down right
     }
     
+    # Hand activity tracking variables
+    left_hand_difference = 0.0
+    right_hand_difference = 0.0
+    
+    # Hand distance tracking variables
+    hand_distance_changes = 0.0
+    prev_normalized_distance = None
+    distance_frames_analyzed = 0
+    
+    # Previous frame hand triangles and reference landmarks
+    prev_left_triangle = None
+    prev_right_triangle = None
+    prev_left_reference = None
+    prev_right_reference = None
+    
+    # Hand landmark indices (excluding 15 and 16)
+    left_hand_indices = [21, 19, 17]  # Left hand landmarks
+    right_hand_indices = [22, 20, 18]  # Right hand landmarks
+    
     # Open video file
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
@@ -105,7 +226,8 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
     interval = int(frame_interval * fps)
     frame_idx = 0
     total_frames_analyzed = 0
-    
+    hand_activity_frames = 0  # Count frames where hand activity was calculated
+
     options = PoseLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=model_path),
         running_mode=VisionRunningMode.VIDEO)
@@ -145,7 +267,7 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
                     # Calculate symmetry points
                     vertical_symmetry_x, point1, point2, point3 = calculate_symmetry_points(landmarks)
                     
-                    if vertical_symmetry_x is not None and len(landmarks) >= 17:  # Need landmarks 15, 16
+                    if vertical_symmetry_x is not None and len(landmarks) >= 23:  # Need landmarks up to 22
                         # Track hand positions (landmarks 15 and 16)
                         left_hand_pos = categorize_hand_position(landmarks[15].x, landmarks[15].y, point1, point2, point3)
                         right_hand_pos = categorize_hand_position(landmarks[16].x, landmarks[16].y, point1, point2, point3)
@@ -153,6 +275,54 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
                         # Increment counters
                         hand_position_counts[left_hand_pos] = hand_position_counts.get(left_hand_pos, 0) + 1
                         hand_position_counts[right_hand_pos] = hand_position_counts.get(right_hand_pos, 0) + 1
+                        
+                        # Hand activity analysis
+                        if len(landmarks) >= 23:  # Need landmarks up to 22 for hand triangles
+                            # Create current frame hand triangles
+                            curr_left_triangle = create_hand_triangle(landmarks, left_hand_indices)
+                            curr_right_triangle = create_hand_triangle(landmarks, right_hand_indices)
+                            
+                            # Use landmark 17 as reference for left hand, landmark 18 for right hand
+                            curr_left_reference = (landmarks[17].x, landmarks[17].y)
+                            curr_right_reference = (landmarks[18].x, landmarks[18].y)
+                            
+                            # Calculate hand activity if we have previous frame data
+                            if prev_left_triangle is not None and prev_left_reference is not None:
+                                left_diff = calculate_triangle_intersection_percentage(
+                                    prev_left_triangle, curr_left_triangle, prev_left_reference, curr_left_reference
+                                )
+                                left_hand_difference += left_diff
+                                
+                            if prev_right_triangle is not None and prev_right_reference is not None:
+                                right_diff = calculate_triangle_intersection_percentage(
+                                    prev_right_triangle, curr_right_triangle, prev_right_reference, curr_right_reference
+                                )
+                                right_hand_difference += right_diff
+                                
+                            # Update counters for hand activity frames
+                            if prev_left_triangle is not None or prev_right_triangle is not None:
+                                hand_activity_frames += 1
+                            
+                            # Store current frame data for next iteration
+                            prev_left_triangle = curr_left_triangle
+                            prev_right_triangle = curr_right_triangle
+                            prev_left_reference = curr_left_reference
+                            prev_right_reference = curr_right_reference
+                        
+                        # Hand distance tracking (landmarks 15 and 16)
+                        if len(landmarks) >= 17:  # Need landmarks 15 and 16
+                            curr_normalized_distance = calculate_normalized_hand_distance(landmarks, point1, point2)
+                            
+                            if curr_normalized_distance is not None:
+                                # Calculate distance change if we have previous frame data
+                                if prev_normalized_distance is not None:
+                                    distance_change = abs(curr_normalized_distance - prev_normalized_distance)
+                                    hand_distance_changes += distance_change
+                                    distance_frames_analyzed += 1
+                                
+                                # Store current distance for next iteration
+                                prev_normalized_distance = curr_normalized_distance
+                        
                         total_frames_analyzed += 1
                     
                     if save_frames:
@@ -168,14 +338,33 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
     total_hand_positions = sum(hand_position_counts.values())
     
     if total_hand_positions > 0:
+        # Calculate average hand activity per frame
+        avg_left_hand_activity = left_hand_difference / hand_activity_frames if hand_activity_frames > 0 else 0.0
+        avg_right_hand_activity = right_hand_difference / hand_activity_frames if hand_activity_frames > 0 else 0.0
+        
+        # Calculate average hand distance change per frame
+        avg_hand_distance_change = hand_distance_changes / distance_frames_analyzed if distance_frames_analyzed > 0 else 0.0
+        
         results = {
             "video_path": video_path,
             "total_frames_analyzed": total_frames_analyzed,
+            "hand_activity_frames": hand_activity_frames,
+            "distance_frames_analyzed": distance_frames_analyzed,
             "total_hand_positions": total_hand_positions,
             "percentages": {
                 key: round(hand_position_counts[key]/total_hand_positions*100, 2) for key in hand_position_counts
             },
-            "absolute_counts": hand_position_counts.copy()
+            "absolute_counts": hand_position_counts.copy(),
+            "hand_activity": {
+                "left_hand_avg_activity": round(avg_left_hand_activity, 2),
+                "right_hand_avg_activity": round(avg_right_hand_activity, 2),
+                "avg_combined_activity": round((avg_left_hand_activity + avg_right_hand_activity) / 2, 2)
+            },
+            "hand_distance": {
+                "total_distance_changes": round(hand_distance_changes, 4),
+                "avg_distance_change_per_frame": round(avg_hand_distance_change, 4),
+                "frames_with_distance_data": distance_frames_analyzed
+            }
         }
     else:
         results = {
@@ -198,9 +387,10 @@ def format_analysis_results(results):
     if "error" in results:
         return f"Error: {results['error']}"
     
-    formatted_string = f"=== HAND POSITION ANALYSIS RESULTS ===\n"
-    formatted_string += f"Video: {results['video_path']}\n"
+    formatted_string = f"Video: {results['video_path']}\n"
     formatted_string += f"Total frames analyzed: {results['total_frames_analyzed']}\n"
+    if 'hand_activity_frames' in results:
+        formatted_string += f"Hand activity frames: {results['hand_activity_frames']}\n"
     formatted_string += f"Total hand positions tracked: {results['total_hand_positions']}\n\n"
     
     formatted_string += "Percentages per hand:\n"
@@ -210,6 +400,22 @@ def format_analysis_results(results):
     formatted_string += "\nAbsolute counts:\n"
     for key, count in results['absolute_counts'].items():
         formatted_string += f"{key}: {count}\n"
+    
+    # Add hand activity information if available
+    if 'hand_activity' in results:
+        formatted_string += "\nHand Activity Analysis:\n"
+        activity = results['hand_activity']
+        formatted_string += f"Left hand average activity per frame: {activity['left_hand_avg_activity']}%\n"
+        formatted_string += f"Right hand average activity per frame: {activity['right_hand_avg_activity']}%\n"
+        formatted_string += f"Average combined activity per frame: {activity['avg_combined_activity']}%\n"
+    
+    # Add hand distance information if available
+    if 'hand_distance' in results:
+        formatted_string += "\nHand Distance Analysis:\n"
+        distance = results['hand_distance']
+        formatted_string += f"Total normalized distance changes: {distance['total_distance_changes']}\n"
+        formatted_string += f"Average distance change per frame: {distance['avg_distance_change_per_frame']}\n"
+        formatted_string += f"Frames with distance data: {distance['frames_with_distance_data']}\n"
     
     return formatted_string
 

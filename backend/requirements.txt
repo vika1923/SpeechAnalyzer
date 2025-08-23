@@ -20,4 +20,5 @@ requests
 # vaderSentiment>=3.3.2
 opencv-python
 mediapipe
+shapely
 aiofiles
