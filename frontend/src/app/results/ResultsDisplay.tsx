@@ -20,8 +20,12 @@ interface AnalysisResults {
   gaze_angle_x: number[];
   gaze_angle_y: number[];
   aus_sum: number;
+  blinks: number;
   active: number;
   passive: number;
+  readability_score: string;
+  cefr: string;
+  ielts: string;
 }
 
 export default function ResultsDisplay({ results }: { results: AnalysisResults }) {

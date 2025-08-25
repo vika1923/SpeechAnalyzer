@@ -1,7 +1,7 @@
 import requests
 import os
 import json
-from typing import Optional
+from typing import Optional, Tuple
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from logger import get_logger
@@ -44,6 +44,15 @@ def send_api_request(prompt, text, model=almaz, temperature=0.3, max_tokens=500)
     content = data["choices"][0]["message"]["content"]
     return content
 
+def get_ielts(text, model=almaz, temperature=0.3, max_tokens=500) -> Optional[str]:
+    prompt = \
+"""You are an IELTS and CEFR scorer.
+You will be given a text. Your task is to output the CEFR score for the text.
+In addition to that give me the IELTS score for the text. Evaluate the text's English level based on words and grammatical structures.
+Make sure that IELTS scores are consistent with the text and represent the true score. Format the output like this: "7.5" or "8.0". Do not output anything else and just stop at this.
+Do not output the scores below 4.0 and just output "4.0" if the score is below 4.0."""
+    return send_api_request(prompt, text, model, temperature, max_tokens)
+
 def fix_punctuation_and_paragraphs(text, model=almaz, temperature=0.3, max_tokens=500) -> Optional[str]:
     # return send_api_request(text, model, temperature, max_tokens)
     prompt = \
@@ -73,6 +82,19 @@ Example output:
     "it would be wonderful beautiful" should be "it was wonderfully beautiful"
     "escavators" should be "escalators" """
     return send_api_request(prompt, text, model, temperature, max_tokens)
+
+def get_ielts_and_cefr(text_to_check) -> Tuple[str, str] | None:
+    ielts = get_ielts(text_to_check)
+    if ielts in ["4.0", "4.5", "5.0"]:
+        return ielts, "B1"
+    elif ielts in ["5.5", "6.0", "6.5"]:
+        return ielts, "B2"
+    elif ielts in ["7.0", "7.5", "8.0"]:
+        return ielts, "C1"
+    elif ielts in ["8.5", "9.0"]:
+        return ielts, "C2"
+    else: 
+        return None
 
 
 def get_mistakes_and_text(text_to_check):

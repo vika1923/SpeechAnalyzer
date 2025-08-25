@@ -12,6 +12,7 @@ import aiofiles
 from logger import get_logger
 import video_to_vaw
 import speech_to_text
+import readability
 import active_passive
 import parts_of_speech
 import read_volume
@@ -89,8 +90,8 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         jobs[job_id]["status"] = "processing"
         jobs[job_id]["progress"] = 10
         
-        logger.info("Converting video to audio")
         # Convert video to WAV audio
+        logger.info("Converting video to audio")
         audio_path = video_to_vaw.convert_video_to_wav(file_path)
         logger.info(f"Audio path: {audio_path}")
         if audio_path is None:
@@ -100,21 +101,22 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         
         jobs[job_id]["progress"] = 20
 
-        logger.info("Transcribing")
         # Transcribe speech to words with timestamps
+        logger.info("Transcribing")
         timestamped_transcript_by_words = speech_to_text.speech_to_words(audio_path=audio_path)
+        words = list(timestamped_transcript_by_words.values())
         jobs[job_id]["progress"] = 30
         
-        logger.info("Counting words")
         # Calculate word count
+        logger.info("Counting words")
         word_count = rate_of_speech.count_words(timestamped_transcript_by_words)
         
         # Combine words into a single unpunctuated string
         full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words.items())
         jobs[job_id]["progress"] = 40
         
-        logger.info("Adding punctuation")
         # Add punctuation to the full text
+        logger.info("Adding punctuation")
         full_text = grammar_tone.fix_punctuation_and_paragraphs(full_unpunctuated_text)
         if full_text is None:
             jobs[job_id]["status"] = "failed"
@@ -123,8 +125,8 @@ def process_video_analysis_sync(job_id: str, file_path: str):
 
         jobs[job_id]["progress"] = 50
         
-        logger.info("Getting grammar corrections")
         # --- Grammar Correction (now using grammar_tone.get_mistakes_and_text) ---
+        logger.info("Getting grammar corrections")
         mistakes_lines, corrected_text, correction_spans = get_grammar_corrections(full_text)
         
         # For highlighting, wrap the corrected spans in <c> tags
@@ -159,43 +161,57 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         corrected_transcript_with_highlights = highlighted_text
         jobs[job_id]["progress"] = 60
 
-        logger.info("Analyzing parts of speech")
         # Analyze parts of speech
+        logger.info("Analyzing parts of speech")
         parts_of_speech_dict = parts_of_speech.parts_of_speech(full_text)
         jobs[job_id]["progress"] = 70
         
-        logger.info("Analyzing rate of speech")
         # Calculate rate of speech points over time
+        logger.info("Analyzing rate of speech")
         rate_of_speech_points = rate_of_speech.get_rate_of_speech(timestamped_transcript_by_words)
         
-        logger.info("Getting volume")
         # Get volume (RMS) points over time
+        logger.info("Getting volume")
         volume_points_list = read_volume.get_rms_per_segment(audio_path)
         volume_points = {str(ts): float(rms) for ts, rms in volume_points_list}
         jobs[job_id]["progress"] = 80
         
-        logger.info("Getting tone")
         # Analyze custom tones (Grammarly-like, now using Sapling)
+        logger.info("Getting tone")
         custom_tone_results = sapling.get_tone(full_text)
 
-        logger.info("Looking at hands")
         # Analyze hand positions
+        logger.info("Looking at hands")
         hand_position_results_dict = pose_tracking.analyze_hand_positions(file_path)
         hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
         jobs[job_id]["progress"] = 90
 
-        logger.info("Looking at gaze")
         # Analyze gaze
+        logger.info("Looking at gaze")
         openface_info = openface.get_face_info(file_path)
         gaze_x = openface_info["gaze_angle_x"]
         gaze_y = openface_info["gaze_angle_y"]
         aus_sum = openface.get_all_aus_sum(openface_info)
         blinks = openface_info["blinks"]
 
+        # Analyze active
         logger.info("Looking at active/passive")
-        # Analyze active/passive
         active, passive = active_passive.get_active_passive(full_text.split("."))
-        
+
+        # Add readability score
+        logger.info("Looking at readability")   
+        readability_score = readability.readibility_score(len(full_text.split(".")), words)
+
+        # Add CEFR score
+        logger.info("Looking at CEFR")
+        ielts_cefr = grammar_tone.get_ielts_and_cefr(full_text)
+        if ielts_cefr is None:
+            logger.info("IELTS and CEFR scores not found")
+            ielts, cefr = "42", "B42"
+        else:
+            ielts, cefr = ielts_cefr
+
+
         # Prepare final results
         json_content = {
             "word_count": word_count,
@@ -214,6 +230,9 @@ def process_video_analysis_sync(job_id: str, file_path: str):
             "blinks": blinks,
             "active": active,
             "passive": passive,
+            "readability_score": readability_score,
+            "cefr": cefr,
+            "ielts": ielts,
         }
         
         # Update job with results
