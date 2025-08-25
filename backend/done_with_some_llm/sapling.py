@@ -18,7 +18,7 @@ def get_tone(text):
         return response.json()["overall"]
     else:
         # print("fail")
-        return([[1, 'neutral', '😐']])
+        return([[42, '42', '😐']])
 
 if __name__ == "__main__":
     print(get_tone("We are bad at this. What if it dies??? It is your responsibility to look after it"))

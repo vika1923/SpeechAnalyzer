@@ -343,28 +343,29 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
         avg_right_hand_activity = right_hand_difference / hand_activity_frames if hand_activity_frames > 0 else 0.0
         
         # Calculate average hand distance change per frame
-        avg_hand_distance_change = hand_distance_changes / distance_frames_analyzed if distance_frames_analyzed > 0 else 0.0
+        avg_hand_distance_change = hand_distance_changes / distance_frames_analyzed if distance_frames_analyzed > 0 else 42
         
         results = {
-            "video_path": video_path,
-            "total_frames_analyzed": total_frames_analyzed,
-            "hand_activity_frames": hand_activity_frames,
-            "distance_frames_analyzed": distance_frames_analyzed,
-            "total_hand_positions": total_hand_positions,
-            "percentages": {
+            "useless_impressive_data":{
+                "video": video_path,
+                "total_frames_analyzed": total_frames_analyzed,
+                "hand_activity_frames": hand_activity_frames,
+                "distance_frames_analyzed": distance_frames_analyzed,
+                "total_hand_positions": total_hand_positions,
+            },
+            "boxes_percentages": {
                 key: round(hand_position_counts[key]/total_hand_positions*100, 2) for key in hand_position_counts
             },
-            "absolute_counts": hand_position_counts.copy(),
+            # "absolute_counts": hand_position_counts.copy(),   # percentages in absolute counts
             "hand_activity": {
                 "left_hand_avg_activity": round(avg_left_hand_activity, 2),
                 "right_hand_avg_activity": round(avg_right_hand_activity, 2),
-                "avg_combined_activity": round((avg_left_hand_activity + avg_right_hand_activity) / 2, 2)
-            },
-            "hand_distance": {
+                "avg_combined_activity": round((avg_left_hand_activity + avg_right_hand_activity) / 2, 2),
+
                 "total_distance_changes": round(hand_distance_changes, 4),
                 "avg_distance_change_per_frame": round(avg_hand_distance_change, 4),
-                "frames_with_distance_data": distance_frames_analyzed
-            }
+                # "frames_with_distance_data": distance_frames_analyzed
+            },
         }
     else:
         results = {
@@ -373,52 +374,6 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
         }
     
     return results
-
-def format_analysis_results(results):
-    """
-    Format the analysis results into a string.
-    
-    Args:
-        results: Dictionary containing analysis results
-        
-    Returns:
-        str: Formatted string of analysis results
-    """
-    if "error" in results:
-        return f"Error: {results['error']}"
-    
-    formatted_string = f"Video: {results['video_path']}\n"
-    formatted_string += f"Total frames analyzed: {results['total_frames_analyzed']}\n"
-    if 'hand_activity_frames' in results:
-        formatted_string += f"Hand activity frames: {results['hand_activity_frames']}\n"
-    formatted_string += f"Total hand positions tracked: {results['total_hand_positions']}\n\n"
-    
-    formatted_string += "Percentages per hand:\n"
-    for key, percentage in results['percentages'].items():
-        formatted_string += f"{key}: {percentage}%\n"
-    
-    formatted_string += "\nAbsolute counts:\n"
-    for key, count in results['absolute_counts'].items():
-        formatted_string += f"{key}: {count}\n"
-    
-    # Add hand activity information if available
-    if 'hand_activity' in results:
-        formatted_string += "\nHand Activity Analysis:\n"
-        activity = results['hand_activity']
-        formatted_string += f"Left hand average activity per frame: {activity['left_hand_avg_activity']}%\n"
-        formatted_string += f"Right hand average activity per frame: {activity['right_hand_avg_activity']}%\n"
-        formatted_string += f"Average combined activity per frame: {activity['avg_combined_activity']}%\n"
-    
-    # Add hand distance information if available
-    if 'hand_distance' in results:
-        formatted_string += "\nHand Distance Analysis:\n"
-        distance = results['hand_distance']
-        formatted_string += f"Total normalized distance changes: {distance['total_distance_changes']}\n"
-        formatted_string += f"Average distance change per frame: {distance['avg_distance_change_per_frame']}\n"
-        formatted_string += f"Frames with distance data: {distance['frames_with_distance_data']}\n"
-    
-    return formatted_string
-
 
 if __name__ == "__main__":
     # Analyze the video
