@@ -1,4 +1,5 @@
 import subprocess 
+from typing import Dict, List
 import polars as pl
 from logger import get_logger
 
@@ -14,24 +15,28 @@ def extract_video(file_path, out_dir, file_name = "video", openface_path='/opt/O
         '-aus'
     ])
 
-def get_gaze_and_aus(file_path):
+def get_face_info(file_path: str) -> Dict[str, List[float | List[float]]]:
     gaze = ["gaze_angle_x", "gaze_angle_y"]
     aus = [
         "AU01_r", "AU02_r", "AU04_r", "AU05_r", "AU06_r", "AU07_r",
         "AU09_r", "AU10_r", "AU12_r", "AU14_r", "AU15_r", "AU17_r",
-        "AU20_r", "AU23_r", "AU25_r", "AU26_r", "AU45_r",
+        "AU20_r", "AU23_r", "AU25_r", "AU26_r", "AU45_r", "AU45_c"
     ]
     print("Yes")
     df = pl.read_csv(file_path, columns=gaze + aus)
 
     result = {}
-
+    gaze_lists = {col: df[col].to_list() for col in gaze}
     # Sum of absolute gaze angles
-    gaze_sums = df.select([pl.col(col).abs().mean().alias(col + "_abs_sum") for col in gaze])
-    result.update(dict(zip(gaze, gaze_sums.row(0))))
+    # gaze_sums = df.select([pl.col(col).abs().mean().alias(col + "_abs_sum") for col in gaze])
+    result.update(gaze_lists)
 
     # Sum of absolute diffs for AUs
     for col in aus:
+        if col == "AU45_c":
+            # sum the blinks
+            result["blinks"] = df[col].sum()
+            continue
         diff_sum = df.select(
             (pl.col(col) - pl.col(col).shift(1)).abs().mean().alias(col + "_diff_sum")
         )[0, 0]
@@ -51,7 +56,7 @@ def return_numbers(file_path, openface_path='/opt/OpenFace/build/bin/FeatureExtr
         # temp_dir = "/app/videos/openface"  # Use absolute path that exists in container
         extract_video(file_path, temp_dir, openface_path=openface_path)
         print("No")
-        out = get_gaze_and_aus(temp_dir+"/video.csv") # add stuff
+        out = get_face_info(temp_dir+"/video.csv") # add stuff
         result = (out['gaze_angle_x'], out['gaze_angle_y'], get_all_aus_sum(out))
         logger.info(f"return_numbers({file_path}) returns: {result}")
         return result

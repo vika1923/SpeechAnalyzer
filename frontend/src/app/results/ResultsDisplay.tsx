@@ -17,6 +17,11 @@ interface AnalysisResults {
   grammar_mistakes: [[number, number], string, string][];
   custom_tone_results: [number, string, string][];
   hand_position_results: string;
+  gaze_angle_x: number[];
+  gaze_angle_y: number[];
+  aus_sum: number;
+  active: number;
+  passive: number;
 }
 
 export default function ResultsDisplay({ results }: { results: AnalysisResults }) {

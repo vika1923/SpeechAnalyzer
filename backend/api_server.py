@@ -12,10 +12,12 @@ import aiofiles
 from logger import get_logger
 import video_to_vaw
 import speech_to_text
+import active_passive
 import parts_of_speech
 import read_volume
 import rate_of_speech
 from done_with_some_llm import grammar_tone, sapling
+import openface
 # from gramformer import Gramformer # Import Gramformer
 import pose_tracking
 # import openface  # Removed - not needed
@@ -113,7 +115,12 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         
         logger.info("Adding punctuation")
         # Add punctuation to the full text
-        full_text = full_unpunctuated_text
+        full_text = grammar_tone.fix_punctuation_and_paragraphs(full_unpunctuated_text)
+        if full_text is None:
+            jobs[job_id]["status"] = "failed"
+            jobs[job_id]["error"] = "Failed to add punctuation to text."
+            return
+
         jobs[job_id]["progress"] = 50
         
         logger.info("Getting grammar corrections")
@@ -177,8 +184,17 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
         jobs[job_id]["progress"] = 90
 
-        # OpenFace removed - not needed
-        # gaze_x, gaze_y, aus_sum = 0.0, 0.0, 0.0
+        logger.info("Looking at gaze")
+        # Analyze gaze
+        openface_info = openface.get_face_info(file_path)
+        gaze_x = openface_info["gaze_angle_x"]
+        gaze_y = openface_info["gaze_angle_y"]
+        aus_sum = openface.get_all_aus_sum(openface_info)
+        blinks = openface_info["blinks"]
+
+        logger.info("Looking at active/passive")
+        # Analyze active/passive
+        active, passive = active_passive.get_active_passive(full_text.split("."))
         
         # Prepare final results
         json_content = {
@@ -192,6 +208,12 @@ def process_video_analysis_sync(job_id: str, file_path: str):
             "corrected_transcript": corrected_transcript_with_highlights,
             "grammar_mistakes": grammar_mistakes,
             "hand_position_results": hand_position_results_text,
+            "gaze_x": gaze_x,
+            "gaze_y": gaze_y,
+            "aus_sum": aus_sum,
+            "blinks": blinks,
+            "active": active,
+            "passive": passive,
         }
         
         # Update job with results

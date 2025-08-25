@@ -17,19 +17,44 @@ logger.info(f"OR_API_KEY: {'Set' if API_KEY else 'Not set'}")
 # almaz = "meta-llama/llama-4-maverick:free"
 almaz = "deepseek/deepseek-chat-v3-0324:free"
 
-def fix_grammar(prompt, model=almaz) -> Optional[str]:
+def send_api_request(prompt, text, model=almaz, temperature=0.3, max_tokens=500):
     if not API_KEY:
         return None
-
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
-    payload = { # TODO: add better prompt here
+    payload = {
         "model": model,
         "messages": [
-            {"role": "system", "content":"""You are a professional public speaking assessor. You will be given a part of a public speech transcript. Your task is to:
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": text}
+        ],
+        "temperature": temperature,
+        "max_tokens": max_tokens
+    }
+
+    response = requests.post(url, headers=headers, json=payload, timeout=60)
+    logger.info(f"Raw response text from OpenRouter: {response.text}")
+
+    data = response.json()
+    if "choices" not in data:
+        return ""
+    content = data["choices"][0]["message"]["content"]
+    return content
+
+def fix_punctuation_and_paragraphs(text, model=almaz, temperature=0.3, max_tokens=500) -> Optional[str]:
+    # return send_api_request(text, model, temperature, max_tokens)
+    prompt = \
+"""You are a professional text editor. 
+Your job is to fix all the punctuation mistakes and separate the text into paragraphs so that it can be published. 
+You will be given a public speech and you should output the corrected text. Do not output anything else or change the content of the text."""
+    return send_api_request(prompt, text, model, temperature, max_tokens)
+
+def fix_grammar(text, model=almaz, temperature=0.3, max_tokens=500) -> Optional[str]:
+    prompt = \
+"""You are a professional public speaking assessor. You will be given a part of a public speech transcript. Your task is to:
     1. Correct all the grammar mistakes, excluding punctuation mistakes.
     2. Correct all the semantic mistakes (fix misused words and transitions).
     3. Correct malapropisms and misused words.
@@ -46,21 +71,8 @@ After you listed all the mistakes, output the corrected text itself.
 Example output:
     "I go to Tashkent metro yesterday" should be "I went to Tashkent metro yesterday"
     "it would be wonderful beautiful" should be "it was wonderfully beautiful"
-    "escavators" should be "escalators" """},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3,
-        "max_tokens": 500
-    }
-
-    response = requests.post(url, headers=headers, json=payload, timeout=60)
-    logger.info(f"Raw response text from OpenRouter: {response.text}")
-
-    data = response.json()
-    if "choices" not in data:
-        return ""
-    content = data["choices"][0]["message"]["content"]
-    return content
+    "escavators" should be "escalators" """
+    return send_api_request(prompt, text, model, temperature, max_tokens)
 
 
 def get_mistakes_and_text(text_to_check):

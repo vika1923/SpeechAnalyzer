@@ -35,18 +35,6 @@ import {
  * - [2]: The original incorrect word/phrase as captured by the tag content.
  *  @property {[number, string, string][]} [custom_tone_results] - Optional: results for custom tone analysis.
  */
-interface AnalysisResults {
-  transcript: string;
-  corrected_transcript: string;
-  word_count: number;
-  rate_of_speech_points: [number, number][];
-  volume_points: Record<string, number>;
-  tone_scores?: Record<string, number>;
-  parts_of_speech: Record<string, number>;
-  grammar_mistakes: [[number, number], string, string][];
-  custom_tone_results: [number, string, string][];
-  hand_position_results: string;
-}
 
 /**
  * The main Home component for the Speech Analyzer application, styled as a SaaS landing page.
