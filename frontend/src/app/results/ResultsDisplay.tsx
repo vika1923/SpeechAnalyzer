@@ -150,35 +150,26 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             transition={{ delay: 0.8 }}
             className="md:col-span-1 border-card border-indigo-700 bg-indigo-50 p-6 shadow-xl rounded-xl"
         >
-            <h3 className="font-display text-lg text-indigo-700 mb-4">Parts of Speech Distribution</h3>
+            <h3 className="font-display text-lg text-indigo-700 mb-4">Active & Passive voice</h3>
             <div className="flex flex-col md:flex-row items-center justify-center">
                 <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                        <Pie
-                            data={Object.entries(results.parts_of_speech).map(([part, count]) => ({
-                                name: part.replace('_', ' '), // Clean up name for display
-                                value: count
-                            }))}
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                            animationBegin={0}
-                            animationDuration={800}
-                            animationEasing="ease-out"
-                        >
-                            {
-                                Object.entries(results.parts_of_speech).map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={`hsl(${index * 60}, 70%, 50%)`} /> // Dynamic colors
-                                ))
-                            }
-                        </Pie>
+                    <BarChart
+                        data={[
+                            { name: 'Active', count: results.active },
+                            { name: 'Passive', count: results.passive },
+                        ]}
+                        margin={{ top: 16, right: 16, left: 0, bottom: 16 }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis allowDecimals={false} />
                         <Tooltip />
-                        <Legend layout="vertical" align="right" verticalAlign="middle" />
-                    </PieChart>
+                        <Legend />
+                        <Bar dataKey="count" name="Sentences">
+                            <Cell key="cell-active" fill="#34d399" />
+                            <Cell key="cell-passive" fill="#f87171" />
+                        </Bar>
+                    </BarChart>
                 </ResponsiveContainer>
             </div>
         </motion.div>

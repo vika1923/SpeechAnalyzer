@@ -1,4 +1,6 @@
 from typing import List
+import nltk
+nltk.download('cmudict')
 from nltk.corpus import cmudict
 import re
 cmu_dict = cmudict.dict()
