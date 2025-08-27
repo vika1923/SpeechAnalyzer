@@ -18,6 +18,7 @@ client = OpenAI(api_key=API_KEY) if API_KEY else None
 
 # Use GPT-4o-mini as the default model
 default_model = "gpt-4o-mini"
+nano = "gpt-5-nano"
 
 def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=500):
     if not client:
@@ -45,7 +46,7 @@ def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tok
         logger.error(f"Error calling OpenAI API: {str(e)}")
         return None
 
-def get_ielts(text, model=default_model, temperature=0.3, max_tokens=500) -> Optional[str]:
+def get_ielts(text, model=nano, temperature=0.3, max_tokens=500) -> Optional[str]:
     prompt = \
 """You are an IELTS and CEFR scorer.
 You will be given a text. Your task is to output the CEFR score for the text.
@@ -54,7 +55,7 @@ Make sure that IELTS scores are consistent with the text and represent the true 
 Do not output the scores below 4.0 and just output "4.0" if the score is below 4.0."""
     return send_api_request(prompt, text, model, temperature, max_tokens)
 
-def fix_punctuation_and_paragraphs(text, model=default_model, temperature=0.3, max_tokens=500) -> Optional[str]:
+def fix_punctuation_and_paragraphs(text, model=nano, temperature=0.3, max_tokens=500) -> Optional[str]:
     # return send_api_request(text, model, temperature, max_tokens)
     prompt = \
 """You are a professional text editor. 
