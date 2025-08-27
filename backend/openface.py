@@ -65,6 +65,18 @@ def return_numbers(file_path, openface_path='/opt/OpenFace/build/bin/FeatureExtr
         # Return default values instead of None to avoid breaking the pipeline
         return (0.0, 0.0, 0.0)
 
+def extract_and_get_info(file_path, openface_path='/Users/almaz/PycharmProjects/SpeechAnalyzer/openFace/OpenFace/build/bin/FeatureExtraction', temp_dir="/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/tests"):
+    try:
+        # temp_dir = "/app/videos/openface"  # Use absolute path that exists in container
+        extract_video(file_path, temp_dir, openface_path=openface_path)
+        print("No")
+        out = get_face_info(temp_dir+"/video.csv") # add stuff
+        return out
+    except Exception as e:
+        logger.error(f"extract_and_get_info({file_path}) failed: {e}")
+        # Return default values instead of None to avoid breaking the pipeline
+        return {}
+
 if __name__ == "__main__":
     print("Hello")
     numbers = return_numbers('/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/Vika.mov', 

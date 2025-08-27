@@ -183,16 +183,21 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # Analyze hand positions
         logger.info("Looking at hands")
         hand_position_results_dict = pose_tracking.analyze_hand_positions(file_path)
-        hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
+        hand_position_results_text = str(hand_position_results_dict)
+        # hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
         jobs[job_id]["progress"] = 90
 
         # Analyze gaze
         logger.info("Looking at gaze")
-        openface_info = openface.get_face_info(file_path)
-        gaze_x = openface_info["gaze_angle_x"]
-        gaze_y = openface_info["gaze_angle_y"]
-        aus_sum = openface.get_all_aus_sum(openface_info)
-        blinks = openface_info["blinks"]
+        gaze_x = [0, 0]
+        gaze_y = [0, 0]
+        aus_sum = 0
+        blinks = 0
+        # openface_info = openface.extract_and_get_info(file_path)
+        # gaze_x = openface_info["gaze_angle_x"]
+        # gaze_y = openface_info["gaze_angle_y"]
+        # aus_sum = openface.get_all_aus_sum(openface_info)
+        # blinks = openface_info["blinks"]
 
         # Analyze active
         logger.info("Looking at active/passive")

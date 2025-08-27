@@ -20,6 +20,7 @@ almaz = "deepseek/deepseek-chat-v3-0324:free"
 def send_api_request(prompt, text, model=almaz, temperature=0.3, max_tokens=500):
     if not API_KEY:
         return None
+    logger.info(f"Sending request to OpenRouter API with prompt: {prompt}, text: {text}, model: {model}, temperature: {temperature}, max_tokens: {max_tokens}")
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -38,6 +39,7 @@ def send_api_request(prompt, text, model=almaz, temperature=0.3, max_tokens=500)
     response = requests.post(url, headers=headers, json=payload, timeout=60)
     logger.info(f"Raw response text from OpenRouter: {response.text}")
 
+    logger.info(f"OpenRouter response: {response.text}")
     data = response.json()
     if "choices" not in data:
         return ""
@@ -81,6 +83,7 @@ Example output:
     "I go to Tashkent metro yesterday" should be "I went to Tashkent metro yesterday"
     "it would be wonderful beautiful" should be "it was wonderfully beautiful"
     "escavators" should be "escalators" """
+
     return send_api_request(prompt, text, model, temperature, max_tokens)
 
 def get_ielts_and_cefr(text_to_check) -> Tuple[str, str] | None:
