@@ -6,6 +6,167 @@ import {
 } from 'recharts';
 import { motion } from "framer-motion";
 
+// StickmanVisualization Component
+function StickmanVisualization({ handPositionData }: { handPositionData: string }) {
+  // Parse the hand position data to extract percentages
+  const parseHandPositionData = (data: string) => {
+    try {
+      // The data is a string representation of a dictionary
+      // Look for 'boxes_percentages': {...}
+      const boxesMatch = data.match(/'boxes_percentages':\s*{([^}]+)}/);
+      if (!boxesMatch) return {};
+      
+      const boxesContent = boxesMatch[1];
+      const percentages: Record<string, number> = {};
+      
+      // Extract each key-value pair
+      const pairs = boxesContent.split(',');
+      pairs.forEach(pair => {
+        const match = pair.match(/'([^']+)':\s*([\d.]+)/);
+        if (match) {
+          percentages[match[1]] = parseFloat(match[2]);
+        }
+      });
+      
+      return percentages;
+    } catch (error) {
+      console.error('Error parsing hand position data:', error);
+      return {};
+    }
+  };
+
+  const percentages = parseHandPositionData(handPositionData);
+  
+  // Get alpha values (percentages as decimals, multiplied by 1.5, clamped between 0.1 and 0.8 for visibility)
+  const getAlpha = (percentage: number) => {
+    return Math.max(0.1, Math.min(0.9, (percentage * 1.6) / 100));
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative inline-block">
+        {/* Stickman base image */}
+        <img 
+          src="/stickman.png" 
+          alt="Stickman" 
+          className="w-64 h-64 object-contain block"
+        />
+        
+        {/* Overlay divs for 8 regions - positioned to match image exactly */}
+        {/* Upper row */}
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            top: 0,
+            left: 0,
+            width: '50%',
+            height: '24%',
+            backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.uul || 0)})` 
+          }}
+          title={`Upper Upper Left: ${percentages.uul || 0}%`}
+        />
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            top: 0,
+            right: 0,
+            width: '50%',
+            height: '24%',
+            backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.uur || 0)})` 
+          }}
+          title={`Upper Upper Right: ${percentages.uur || 0}%`}
+        />
+        
+        {/* Upper middle row */}
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            top: '24%',
+            left: 0,
+            width: '50%',
+            height: '18%',
+            backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.ul || 0)})` 
+          }}
+          title={`Upper Left: ${percentages.ul || 0}%`}
+        />
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            top: '24%',
+            right: 0,
+            width: '50%',
+            height: '18%',
+            backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.ur || 0)})` 
+          }}
+          title={`Upper Right: ${percentages.ur || 0}%`}
+        />
+        
+        {/* Lower middle row */}
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            top: '42%',
+            left: 0,
+            width: '50%',
+            height: '15%',
+            backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.dl || 0)})` 
+          }}
+          title={`Down Left: ${percentages.dl || 0}%`}
+        />
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            top: '42%',
+            right: 0,
+            width: '50%',
+            height: '15%',
+            backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.dr || 0)})` 
+          }}
+          title={`Down Right: ${percentages.dr || 0}%`}
+        />
+        
+        {/* Bottom row */}
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            top: '57%',
+            left: 0,
+            width: '50%',
+            height: '43%',
+            backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.ddl || 0)})` 
+          }}
+          title={`Down Down Left: ${percentages.ddl || 0}%`}
+        />
+        <div 
+          className="absolute pointer-events-none"
+          style={{ 
+            top: '57%',
+            right: 0,
+            width: '50%',
+            height: '43%',
+            backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.ddr || 0)})` 
+          }}
+          title={`Down Down Right: ${percentages.ddr || 0}%`}
+        />
+      </div>
+      
+      {/* Legend */}
+      <div className="mt-4 text-xs text-gray-600">
+        <div className="grid grid-cols-2 gap-2">
+          <div>UUL: {(percentages.uul || 0).toFixed(1)}%</div>
+          <div>UUR: {(percentages.uur || 0).toFixed(1)}%</div>
+          <div>UL: {(percentages.ul || 0).toFixed(1)}%</div>
+          <div>UR: {(percentages.ur || 0).toFixed(1)}%</div>
+          <div>DL: {(percentages.dl || 0).toFixed(1)}%</div>
+          <div>DR: {(percentages.dr || 0).toFixed(1)}%</div>
+          <div>DDL: {(percentages.ddl || 0).toFixed(1)}%</div>
+          <div>DDR: {(percentages.ddr || 0).toFixed(1)}%</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface AnalysisResults {
   transcript: string;
   corrected_transcript: string;
@@ -54,30 +215,28 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
           <p className="text-3xl font-bold text-yellow-600">{results.word_count}</p>
         </motion.div>
 
-        {/* Rate of Speech Chart */}
+        {/* CEFR, IELTS & Readability */}
         <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
             className="border-card border-teal-500 bg-teal-50 p-6 shadow-xl rounded-xl"
         >
-            <h3 className="font-display text-lg text-teal-700 mb-2">CEFR & Readability</h3>
-            <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={results.rate_of_speech_points.map(([time, rate]) => ({
-                    time: time.toFixed(1),
-                    "Words/Min": (rate * 60).toFixed(1) // Convert to words per minute
-                }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e0f2f2" />
-                    <XAxis dataKey="time" label={{ value: "Time (s)", position: "insideBottom", offset: -5 }} />
-                    <YAxis label={{ value: "Words/Min", angle: -90, position: "insideLeft" }} />
-                    <Tooltip
-                        formatter={(value: any, name: string) => [`${value} ${name}`, `Time: ${name === "Words/Min" ? "" : name}s`]}
-                        labelFormatter={(label: any) => `At ${label}s`}
-                    />
-                    <Legend />
-                    <Line type="monotone" dataKey="Words/Min" stroke="#009688" activeDot={{ r: 8 }} />
-                </LineChart>
-            </ResponsiveContainer>
+            <h3 className="font-display text-lg text-teal-700 mb-4">Language Proficiency</h3>
+            <div className="space-y-3">
+                <div>
+                    <p className="text-sm font-medium text-teal-600 mb-1">CEFR Level</p>
+                    <p className="text-2xl font-bold text-teal-700">{results.cefr}</p>
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-teal-600 mb-1">IELTS Score</p>
+                    <p className="text-2xl font-bold text-teal-700">{results.ielts}</p>
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-teal-600 mb-1">Readability Score</p>
+                    <p className="text-2xl font-bold text-teal-700">{results.readability_score}</p>
+                </div>
+            </div>
         </motion.div>
 
         {/* Tone Analysis (Custom Tone Results) */}
@@ -239,7 +398,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={Object.entries(results.volume_points).map(([time, volume]) => ({
                     time: time,
-                    Volume: Math.min(Math.max(volume * 100, 0), 100) // Scale to 0-100 for display
+                    Volume: volume // Display raw decibels
                 }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffe0b2" />
                     <XAxis dataKey="time" label={{ value: "Time Segment", position: "insideBottom", offset: -5 }} hide={true} /> {/* Hide X-axis labels if too many */}
@@ -263,7 +422,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             className="border-card border-gray-500 bg-gray-50 p-6 shadow-xl rounded-xl"
           >
             <h3 className="font-display text-xl text-gray-700 mb-4">Hand Position Analysis</h3>
-            <pre className="font-mono text-sm text-gray-800 whitespace-pre-wrap">{results.hand_position_results}</pre>
+            <StickmanVisualization handPositionData={results.hand_position_results} />
           </motion.div>
         )}
         {/* Word Count */}

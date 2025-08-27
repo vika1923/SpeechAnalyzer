@@ -1,7 +1,7 @@
 from faster_whisper import WhisperModel
 from typing import Dict
 from custom_types import TimeStamp
-from logger import get_logger
+from my_logger import get_logger
 
 # audio_path = "SoliyevShort.wav"
 

@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.io import wavfile
-from logger import get_logger
+from my_logger import get_logger
 
 logger = get_logger(__name__)
 

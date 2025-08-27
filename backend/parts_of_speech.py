@@ -2,7 +2,7 @@ from nltk.tokenize import word_tokenize
 from nltk import pos_tag
 from typing import Dict, List
 from custom_types import PartOfSpeech
-from logger import get_logger
+from my_logger import get_logger
 
 logger = get_logger(__name__)
 

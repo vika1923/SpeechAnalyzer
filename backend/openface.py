@@ -1,7 +1,7 @@
 import subprocess 
 from typing import Dict, List
 import polars as pl
-from logger import get_logger
+from my_logger import get_logger
 
 logger = get_logger(__name__)
 
