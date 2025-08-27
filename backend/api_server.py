@@ -9,7 +9,7 @@ import concurrent.futures
 import threading
 from typing import Dict, Optional
 import aiofiles
-from logger import get_logger
+from my_logger import get_logger
 import video_to_vaw
 import speech_to_text
 import readability

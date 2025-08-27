@@ -1,52 +1,51 @@
-import requests
 import os
 import json
 from typing import Optional, Tuple
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from logger import get_logger
-# import rotateapikeys
+from my_logger import get_logger
+from openai import OpenAI
 
 # 2. assess the text on scale from 1 to 10 for the following categories: confident, assertive, inspirational, informative, direct.
 
 logger = get_logger(__name__)
 
-API_KEY = os.getenv("OR_API_KEY")
-logger.info(f"OR_API_KEY: {'Set' if API_KEY else 'Not set'}")
+API_KEY = os.getenv("OPENAI_API_KEY")
+logger.info(f"OPENAI_API_KEY: {'Set' if API_KEY else 'Not set'}")
 
-# almaz = "meta-llama/llama-4-maverick:free"
-almaz = "deepseek/deepseek-chat-v3-0324:free"
+# Initialize OpenAI client
+client = OpenAI(api_key=API_KEY) if API_KEY else None
 
-def send_api_request(prompt, text, model=almaz, temperature=0.3, max_tokens=500):
-    if not API_KEY:
+# Use GPT-4o-mini as the default model
+default_model = "gpt-4o-mini"
+
+def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=500):
+    if not client:
+        logger.error("OpenAI client not initialized - API key not set")
         return None
-    logger.info(f"Sending request to OpenRouter API with prompt: {prompt}, text: {text}, model: {model}, temperature: {temperature}, max_tokens: {max_tokens}")
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": text}
-        ],
-        "temperature": temperature,
-        "max_tokens": max_tokens
-    }
+    
+    logger.info(f"Sending request to OpenAI API with prompt: {prompt}, text: {text}, model: {model}, temperature: {temperature}, max_tokens: {max_tokens}")
+    
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": text}
+            ],
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        
+        logger.info(f"OpenAI response received successfully")
+        content = response.choices[0].message.content
+        return content
+        
+    except Exception as e:
+        logger.error(f"Error calling OpenAI API: {str(e)}")
+        return None
 
-    response = requests.post(url, headers=headers, json=payload, timeout=60)
-    logger.info(f"Raw response text from OpenRouter: {response.text}")
-
-    logger.info(f"OpenRouter response: {response.text}")
-    data = response.json()
-    if "choices" not in data:
-        return ""
-    content = data["choices"][0]["message"]["content"]
-    return content
-
-def get_ielts(text, model=almaz, temperature=0.3, max_tokens=500) -> Optional[str]:
+def get_ielts(text, model=default_model, temperature=0.3, max_tokens=500) -> Optional[str]:
     prompt = \
 """You are an IELTS and CEFR scorer.
 You will be given a text. Your task is to output the CEFR score for the text.
@@ -55,7 +54,7 @@ Make sure that IELTS scores are consistent with the text and represent the true 
 Do not output the scores below 4.0 and just output "4.0" if the score is below 4.0."""
     return send_api_request(prompt, text, model, temperature, max_tokens)
 
-def fix_punctuation_and_paragraphs(text, model=almaz, temperature=0.3, max_tokens=500) -> Optional[str]:
+def fix_punctuation_and_paragraphs(text, model=default_model, temperature=0.3, max_tokens=500) -> Optional[str]:
     # return send_api_request(text, model, temperature, max_tokens)
     prompt = \
 """You are a professional text editor. 
@@ -63,7 +62,7 @@ Your job is to fix all the punctuation mistakes and separate the text into parag
 You will be given a public speech and you should output the corrected text. Do not output anything else or change the content of the text."""
     return send_api_request(prompt, text, model, temperature, max_tokens)
 
-def fix_grammar(text, model=almaz, temperature=0.3, max_tokens=500) -> Optional[str]:
+def fix_grammar(text, model=default_model, temperature=0.3, max_tokens=500) -> Optional[str]:
     prompt = \
 """You are a professional public speaking assessor. You will be given a part of a public speech transcript. Your task is to:
     1. Correct all the grammar mistakes, excluding punctuation mistakes.
@@ -101,7 +100,7 @@ def get_ielts_and_cefr(text_to_check) -> Tuple[str, str] | None:
 
 
 def get_mistakes_and_text(text_to_check):
-    if not API_KEY:
+    if not client:
         return [], text_to_check, []
 
     # EDIT!
@@ -170,4 +169,5 @@ def get_mistakes_and_text(text_to_check):
 
 if __name__ == "__main__":
     t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
-    print(get_mistakes_and_text("Hello, my major is software engineering but despite this being a math -weighted technical major, I love reading. I have a lot of books right over here and my favorite author is Fedor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? it's called Nostrum of the Underground and it tells about Nostrum of the Underground."))
+    # print(get_mistakes_and_text("Hello, my major is software engineering but despite this being a math -weighted technical major, I love reading. I have a lot of books right over here and my favorite author is Fedor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? it's called Nostrum of the Underground and it tells about Nostrum of the Underground."))
+    print(fix_grammar(t))
