@@ -79,6 +79,6 @@ def extract_and_get_info(file_path, openface_path='/Users/almaz/PycharmProjects/
 
 if __name__ == "__main__":
     print("Hello")
-    numbers = return_numbers('/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/Vika.mov', 
+    numbers = extract_and_get_info('/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/Vika.mov', 
                              '/Users/almaz/PycharmProjects/SpeechAnalyzer/openFace/OpenFace/build/bin/FeatureExtraction', 
                              '/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/tests')
