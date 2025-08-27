@@ -20,16 +20,17 @@ client = OpenAI(api_key=API_KEY) if API_KEY else None
 default_model = "gpt-4o-mini"
 nano = "gpt-5-nano"
 
-def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=500):
+def send_gpt4o_request(prompt, text, temperature=0.3, max_tokens=500):
+    """Send request to GPT-4o-mini with standard parameters"""
     if not client:
         logger.error("OpenAI client not initialized - API key not set")
         return None
     
-    logger.info(f"Sending request to OpenAI API with prompt: {prompt}, text: {text}, model: {model}, temperature: {temperature}, max_tokens: {max_tokens}")
+    logger.info(f"Sending request to GPT-4o-mini with prompt: {prompt[:50]}..., text: {text[:50]}..., temperature: {temperature}, max_tokens: {max_tokens}")
     
     try:
         response = client.chat.completions.create(
-            model=model,
+            model=default_model,
             messages=[
                 {"role": "system", "content": prompt},
                 {"role": "user", "content": text}
@@ -38,32 +39,75 @@ def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tok
             max_tokens=max_tokens
         )
         
-        logger.info(f"OpenAI response received successfully")
+        logger.info(f"GPT-4o-mini response received successfully")
         content = response.choices[0].message.content
         return content
         
     except Exception as e:
-        logger.error(f"Error calling OpenAI API: {str(e)}")
+        logger.error(f"Error calling GPT-4o-mini API: {str(e)}")
         return None
 
-def get_ielts(text, model=nano, temperature=0.3, max_tokens=500) -> Optional[str]:
+def send_gpt5nano_request(prompt, text, max_completion_tokens=500):
+    """Send request to GPT-5-nano with fixed temperature=1 and max_completion_tokens"""
+    if not client:
+        logger.error("OpenAI client not initialized - API key not set")
+        return None
+    
+    logger.info(f"Sending request to GPT-5-nano with prompt: {prompt[:50]}..., text: {text[:50]}..., max_completion_tokens: {max_completion_tokens}")
+    
+    try:
+        response = client.chat.completions.create(
+            model=nano,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": text}
+            ],
+            temperature=1,  # Fixed temperature for GPT-5-nano
+            max_completion_tokens=max_completion_tokens
+        )
+        
+        logger.info(f"GPT-5-nano response received successfully")
+        content = response.choices[0].message.content
+        print(response)
+        return content
+        
+    except Exception as e:
+        logger.error(f"Error calling GPT-5-nano API: {str(e)}")
+        return None
+
+# Legacy function for backward compatibility
+def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=1000):
+    """Legacy function - routes to appropriate model-specific function"""
+    if model == nano:
+        return send_gpt5nano_request(prompt, text, max_tokens)
+    else:
+        return send_gpt4o_request(prompt, text, temperature, max_tokens)
+
+def get_ielts(text, use_nano=True, max_tokens=10000) -> Optional[str]:
     prompt = \
 """You are an IELTS and CEFR scorer.
 You will be given a text. Your task is to output the CEFR score for the text.
 In addition to that give me the IELTS score for the text. Evaluate the text's English level based on words and grammatical structures.
 Make sure that IELTS scores are consistent with the text and represent the true score. Format the output like this: "7.5" or "8.0". Do not output anything else and just stop at this.
 Do not output the scores below 4.0 and just output "4.0" if the score is below 4.0."""
-    return send_api_request(prompt, text, model, temperature, max_tokens)
+    
+    if use_nano:
+        return send_gpt5nano_request(prompt, text, max_tokens)
+    else:
+        return send_gpt4o_request(prompt, text, 0.3, max_tokens)
 
-def fix_punctuation_and_paragraphs(text, model=nano, temperature=0.3, max_tokens=500) -> Optional[str]:
-    # return send_api_request(text, model, temperature, max_tokens)
+def fix_punctuation_and_paragraphs(text, use_nano=True, max_tokens=2000) -> Optional[str]:
     prompt = \
 """You are a professional text editor. 
 Your job is to fix all the punctuation mistakes and separate the text into paragraphs so that it can be published. 
 You will be given a public speech and you should output the corrected text. Do not output anything else or change the content of the text."""
-    return send_api_request(prompt, text, model, temperature, max_tokens)
+    
+    if use_nano:
+        return send_gpt5nano_request(prompt, text, max_tokens)
+    else:
+        return send_gpt4o_request(prompt, text, 0.3, max_tokens)
 
-def fix_grammar(text, model=default_model, temperature=0.3, max_tokens=500) -> Optional[str]:
+def fix_grammar(text, use_nano=False, max_tokens=500) -> Optional[str]:
     prompt = \
 """You are a professional public speaking assessor. You will be given a part of a public speech transcript. Your task is to:
     1. Correct all the grammar mistakes, excluding punctuation mistakes.
@@ -84,10 +128,13 @@ Example output:
     "it would be wonderful beautiful" should be "it was wonderfully beautiful"
     "escavators" should be "escalators" """
 
-    return send_api_request(prompt, text, model, temperature, max_tokens)
+    if use_nano:
+        return send_gpt5nano_request(prompt, text, max_tokens)
+    else:
+        return send_gpt4o_request(prompt, text, 0.3, max_tokens)
 
 def get_ielts_and_cefr(text_to_check) -> Tuple[str, str] | None:
-    ielts = get_ielts(text_to_check)
+    ielts = min(get_ielts(text_to_check).split())
     if ielts in ["4.0", "4.5", "5.0"]:
         return ielts, "B1"
     elif ielts in ["5.5", "6.0", "6.5"]:
@@ -169,6 +216,12 @@ def get_mistakes_and_text(text_to_check):
     return mistakes_lines, corrected_text, correction_spans
 
 if __name__ == "__main__":
-    t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
-    # print(get_mistakes_and_text("Hello, my major is software engineering but despite this being a math -weighted technical major, I love reading. I have a lot of books right over here and my favorite author is Fedor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? it's called Nostrum of the Underground and it tells about Nostrum of the Underground."))
-    print(fix_grammar(t))
+    t = """Reading literature is good for everyone. Literature means stories, poems, and plays written by people. When we read these, many good things happen.
+First, reading makes our imagination strong. When we read about a dragon, a hero, or a faraway land, we see it in our mind. This helps us dream and create new ideas.
+Second, reading teaches us about people. Stories show us how others feel, think, and live. We learn to understand happiness, sadness, fear, and love. This makes us kinder.
+Third, reading helps us learn words. Every book has many new words. When we read more, we speak better and write better too.
+Fourth, reading gives us fun. Books can make us laugh, wonder, or feel excited. A good story is like a friend who never leaves us.
+Last, reading can give us hope. In stories, heroes face problems and still win. This teaches us not to give up.
+In short, literature is not just words. It is magic for the mind, a teacher for the heart, and joy for the soul."""
+
+    print(get_ielts(t))
