@@ -171,6 +171,9 @@ interface AnalysisResults {
   transcript: string;
   corrected_transcript: string;
   word_count: number;
+  sentence_count: number;
+  paragraph_count: number;
+  letter_count: number;
   rate_of_speech_points: [number, number][];
   volume_points: Record<string, number>;
   tone_scores?: Record<string, number>;
@@ -211,8 +214,25 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
           transition={{ delay: 0.4 }}
           className="border-card border-yellow-500 bg-yellow-50 p-6 shadow-xl rounded-xl"
         >
-          <h3 className="font-display text-lg text-yellow-700 mb-2">Word Count</h3>
-          <p className="text-3xl font-bold text-yellow-600">{results.word_count}</p>
+          <h3 className="font-display text-lg text-yellow-700 mb-4">Linguistic Structures Counts</h3>
+          <div className="space-y-3">
+                <div>
+                    <p className="text-sm font-medium text-yellow-600 mb-1">Letters</p>
+                    <p className="text-2xl font-bold text-yellow-700">{results.letter_count}</p>
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-yellow-600 mb-1">Words</p>
+                    <p className="text-2xl font-bold text-yellow-700">{results.word_count}</p>
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-yellow-600 mb-1">Sentences</p>
+                    <p className="text-2xl font-bold text-yellow-700">{results.sentence_count}</p>
+                </div>
+                <div>
+                    <p className="text-sm font-medium text-yellow-600 mb-1">Paragraphs</p>
+                    <p className="text-2xl font-bold text-yellow-700">{results.paragraph_count}</p>
+                </div>
+            </div>
         </motion.div>
 
         {/* CEFR, IELTS & Readability */}

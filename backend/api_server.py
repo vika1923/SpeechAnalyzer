@@ -22,6 +22,7 @@ import openface
 # from gramformer import Gramformer # Import Gramformer
 import pose_tracking
 # import openface  # Removed - not needed
+import counts
 
 # --- Job Storage ---
 jobs: Dict[str, Dict] = {}
@@ -216,10 +217,23 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         else:
             ielts, cefr = ielts_cefr
 
+        # Calculate sentence count
+        sentence_count = counts.count_sentences(full_text)
+
+        # Calculate paragraph count
+        paragraph_count = counts.count_paragraphs(full_text)
+
+        # Calculate letter count
+        letter_count = counts.count_letters(full_text)
+
+        hands_analysis_results = pose_tracking.analyze_hand_positions()["hand_activity"]
 
         # Prepare final results
         json_content = {
             "word_count": word_count,
+            "sentence_count": sentence_count,
+            "paragraph_count": paragraph_count,
+            "letter_count": letter_count,
             "parts_of_speech": parts_of_speech_dict,
             "rate_of_speech_points": rate_of_speech_points,
             "volume_points": volume_points,
@@ -238,6 +252,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
             "readability_score": readability_score,
             "cefr": cefr,
             "ielts": ielts,
+            "hands_analysis_results": hands_analysis_results,
         }
         
         # Update job with results
