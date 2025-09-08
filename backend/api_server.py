@@ -23,6 +23,7 @@ import counts
 import openface
 # from gramformer import Gramformer # Import Gramformer
 import pose_tracking
+import predict_flaws
 # import openface  # Removed - not needed
 
 # --- Job Storage ---
@@ -80,6 +81,40 @@ def get_grammar_corrections(text: str):
         correction_spans = []
     return mistakes_lines, corrected_text, correction_spans
 
+def create_word_boundary_mapping(timestamped_transcript, full_text):
+    """
+    Create mapping from TimeStamp to WordBoundary for floss() function.
+    Maps timestamped words to their positions in the full text.
+    """
+    logger.info("create_word_boundary_mapping called")
+    try:
+        mapping = {}
+        current_pos = 0
+        
+        # Sort timestamped words by start time
+        sorted_words = sorted(timestamped_transcript.items(), key=lambda x: x[0][0])
+        
+        for (start_time, end_time), word in sorted_words:
+            # Find the word in the full text starting from current position
+            word_lower = word.lower().strip()
+            full_text_lower = full_text.lower()
+            
+            # Find the next occurrence of this word in the text
+            word_start = full_text_lower.find(word_lower, current_pos)
+            
+            if word_start != -1:
+                word_end = word_start + len(word)
+                mapping[(start_time, end_time)] = (word_start, word_end)
+                current_pos = word_end
+            else:
+                logger.warning(f"Could not find word '{word}' in full text at position {current_pos}")
+        
+        logger.info(f"Created word boundary mapping with {len(mapping)} entries")
+        return mapping
+    except Exception as e:
+        logger.error(f"Error creating word boundary mapping: {e}", exc_info=True)
+        return {}
+
 def process_video_analysis_sync(job_id: str, file_path: str):
     """
     Synchronous video processing function that runs in a separate thread.
@@ -130,6 +165,12 @@ def process_video_analysis_sync(job_id: str, file_path: str):
             jobs[job_id]["status"] = "failed"
             jobs[job_id]["error"] = "Failed to add punctuation to text."
             return
+
+        # Apply floss analysis to identify problematic speech patterns
+        logger.info("Running floss analysis")
+        word_boundary_mapping = create_word_boundary_mapping(timestamped_transcript_by_words, full_text)
+        floss_spans = predict_flaws.floss(word_boundary_mapping, threshhold=1.0)
+        logger.info(f"Floss analysis found {len(floss_spans)} problematic spans")
 
         jobs[job_id]["progress"] = 50
         
@@ -189,8 +230,8 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         logger.info("Getting tone")
         custom_tone_results = sapling.get_tone(full_text)
 
-        # Analyze hand positions
-        logger.info("Looking at hands")
+        # Analyze hand positions and activity
+        logger.info("Looking at hands and eyes")
         hand_position_results_dict = pose_tracking.analyze_hand_positions(file_path)
         hand_position_results_text = str(hand_position_results_dict)
         # hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
@@ -246,6 +287,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
             "corrected_transcript": corrected_transcript_with_highlights,
             "grammar_mistakes": grammar_mistakes,
             "hand_position_results": hand_position_results_text,
+            "hand_eye_activity_results": hand_position_results_dict,
             "gaze_x": gaze_x,
             "gaze_y": gaze_y,
             "aus_sum": aus_sum,
@@ -255,6 +297,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
             "readability_score": readability_score,
             "cefr": cefr,
             "ielts": ielts,
+            "floss_spans": floss_spans,
         }
         logger.info(json_content)
         # Update job with results

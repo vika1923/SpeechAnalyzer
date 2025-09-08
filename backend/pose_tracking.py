@@ -121,6 +121,76 @@ def calculate_triangle_intersection_percentage(triangle1, triangle2, reference_l
         # Return 0 if calculation fails
         return 0.0
 
+def create_eye_polygon(landmarks, eye_landmark_indices):
+    """
+    Create a polygon from eye landmarks.
+    
+    Args:
+        landmarks: List of pose landmarks
+        eye_landmark_indices: List of 4 landmark indices for the eye [8, 6, 5, 4] or [7, 3, 2, 1]
+        
+    Returns:
+        Polygon: Shapely polygon representing the eye, or None if landmarks are missing
+    """
+    if len(landmarks) <= max(eye_landmark_indices):
+        return None
+    
+    # Extract coordinates for the eye landmarks
+    eye_points = []
+    for idx in eye_landmark_indices:
+        eye_points.append((landmarks[idx].x, landmarks[idx].y))
+    
+    try:
+        # Create polygon from the 4 points
+        return Polygon(eye_points)
+    except:
+        # Return None if polygon creation fails (e.g., invalid coordinates)
+        return None
+
+def calculate_eye_intersection_percentage(eye1, eye2, reference_landmark_prev, reference_landmark_curr):
+    """
+    Calculate the intersection percentage between two eye polygons after "clipping" one landmark.
+    
+    Args:
+        eye1: Previous frame eye polygon (Shapely Polygon)
+        eye2: Current frame eye polygon (Shapely Polygon)
+        reference_landmark_prev: Previous frame reference landmark coordinates (x, y)
+        reference_landmark_curr: Current frame reference landmark coordinates (x, y)
+        
+    Returns:
+        float: Intersection percentage (0-100)
+    """
+    if eye1 is None or eye2 is None:
+        return 0.0
+    
+    try:
+        # Calculate the translation needed to "clip" the reference landmarks
+        dx = reference_landmark_curr[0] - reference_landmark_prev[0]
+        dy = reference_landmark_curr[1] - reference_landmark_prev[1]
+        
+        # Translate eye1 to align the reference landmarks
+        from shapely.affinity import translate
+        eye1_aligned = translate(eye1, xoff=dx, yoff=dy)
+        
+        # Calculate intersection
+        intersection = eye1_aligned.intersection(eye2)
+        
+        # Calculate areas
+        intersection_area = intersection.area if intersection.area > 0 else 0
+        union_area = eye1_aligned.union(eye2).area
+        
+        # Calculate percentage difference (100 - intersection percentage)
+        if union_area > 0:
+            intersection_percentage = (intersection_area / union_area) * 100
+            difference_percentage = 100 - intersection_percentage
+            return difference_percentage
+        else:
+            return 0.0
+            
+    except Exception as e:
+        # Return 0 if calculation fails
+        return 0.0
+
 def calculate_normalized_hand_distance(landmarks, point1, point2):
     """
     Calculate the normalized distance between landmarks 15 and 16.
@@ -207,15 +277,29 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
     prev_normalized_distance = None
     distance_frames_analyzed = 0
     
+    # Eye activity tracking variables
+    left_eye_difference = 0.0
+    right_eye_difference = 0.0
+    
     # Previous frame hand triangles and reference landmarks
     prev_left_triangle = None
     prev_right_triangle = None
     prev_left_reference = None
     prev_right_reference = None
     
+    # Previous frame eye polygons and reference landmarks
+    prev_left_eye = None
+    prev_right_eye = None
+    prev_left_eye_reference = None
+    prev_right_eye_reference = None
+    
     # Hand landmark indices (excluding 15 and 16)
     left_hand_indices = [21, 19, 17]  # Left hand landmarks
     right_hand_indices = [22, 20, 18]  # Right hand landmarks
+    
+    # Eye landmark indices
+    left_eye_indices = [8, 6, 5, 4]  # Left eye landmarks
+    right_eye_indices = [7, 3, 2, 1]  # Right eye landmarks
     
     # Open video file
     cap = cv2.VideoCapture(video_path)
@@ -323,6 +407,35 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
                                 # Store current distance for next iteration
                                 prev_normalized_distance = curr_normalized_distance
                         
+                        # Eye activity analysis
+                        if len(landmarks) >= 9:  # Need landmarks up to 8 for eye polygons
+                            # Create current frame eye polygons
+                            curr_left_eye = create_eye_polygon(landmarks, left_eye_indices)
+                            curr_right_eye = create_eye_polygon(landmarks, right_eye_indices)
+                            
+                            # Use landmark 5 as reference for left eye, landmark 2 for right eye
+                            curr_left_eye_reference = (landmarks[5].x, landmarks[5].y)
+                            curr_right_eye_reference = (landmarks[2].x, landmarks[2].y)
+                            
+                            # Calculate eye activity if we have previous frame data
+                            if prev_left_eye is not None and prev_left_eye_reference is not None:
+                                left_eye_diff = calculate_eye_intersection_percentage(
+                                    prev_left_eye, curr_left_eye, prev_left_eye_reference, curr_left_eye_reference
+                                )
+                                left_eye_difference += left_eye_diff
+                                
+                            if prev_right_eye is not None and prev_right_eye_reference is not None:
+                                right_eye_diff = calculate_eye_intersection_percentage(
+                                    prev_right_eye, curr_right_eye, prev_right_eye_reference, curr_right_eye_reference
+                                )
+                                right_eye_difference += right_eye_diff
+                            
+                            # Store current frame data for next iteration
+                            prev_left_eye = curr_left_eye
+                            prev_right_eye = curr_right_eye
+                            prev_left_eye_reference = curr_left_eye_reference
+                            prev_right_eye_reference = curr_right_eye_reference
+                        
                         total_frames_analyzed += 1
                     
                     if save_frames:
@@ -341,6 +454,10 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
         # Calculate average hand activity per frame
         avg_left_hand_activity = left_hand_difference / hand_activity_frames if hand_activity_frames > 0 else 0.0
         avg_right_hand_activity = right_hand_difference / hand_activity_frames if hand_activity_frames > 0 else 0.0
+        
+        # Calculate average eye activity per frame  
+        avg_left_eye_activity = left_eye_difference / total_frames_analyzed if total_frames_analyzed > 0 else 0.0
+        avg_right_eye_activity = right_eye_difference / total_frames_analyzed if total_frames_analyzed > 0 else 0.0
         
         # Calculate average hand distance change per frame
         avg_hand_distance_change = hand_distance_changes / distance_frames_analyzed if distance_frames_analyzed > 0 else 42
@@ -365,6 +482,12 @@ def analyze_hand_positions(video_path, save_frames=False, frame_interval=0.5):
                 "total_distance_changes": round(hand_distance_changes, 4),
                 "avg_distance_change_per_frame": round(avg_hand_distance_change, 4),
                 # "frames_with_distance_data": distance_frames_analyzed
+            },
+            "eye_activity": {
+                "left_eye_avg_activity": round(avg_left_eye_activity, 2),
+                "right_eye_avg_activity": round(avg_right_eye_activity, 2),
+                "avg_combined_eye_activity": round((avg_left_eye_activity + avg_right_eye_activity) / 2, 2),
+                "total_eye_activity": round(left_eye_difference + right_eye_difference, 2)
             },
         }
     else:

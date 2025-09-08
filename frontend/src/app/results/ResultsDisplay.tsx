@@ -6,6 +6,30 @@ import {
 } from 'recharts';
 import { motion } from "framer-motion";
 
+// Helper function to apply underlines to text based on spans
+function applyUnderlinesToText(text: string, spans: [number, number][]) {
+  if (!spans || spans.length === 0) {
+    return text;
+  }
+
+  // Sort spans by start position in descending order to avoid index issues
+  const sortedSpans = [...spans].sort((a, b) => b[0] - a[0]);
+  
+  let result = text;
+  
+  for (const [start, end] of sortedSpans) {
+    // Ensure the span is within the text bounds
+    if (start >= 0 && end <= text.length && start < end) {
+      const before = result.slice(0, start);
+      const underlined = result.slice(start, end);
+      const after = result.slice(end);
+      result = before + `<u class="text-red-600 decoration-2">${underlined}</u>` + after;
+    }
+  }
+  
+  return result;
+}
+
 // StickmanVisualization Component
 function StickmanVisualization({ handPositionData }: { handPositionData: string }) {
   // Parse the hand position data to extract percentages
@@ -181,11 +205,11 @@ interface AnalysisResults {
   grammar_mistakes: [[number, number], string, string][];
   custom_tone_results: [number, string, string][];
   hand_position_results: string;
-  // Backend currently returns gaze_x/gaze_y; keep backward-compat with gaze_angle_x/gaze_angle_y
   gaze_x?: number[];
   gaze_y?: number[];
   gaze_angle_x?: number[];
   gaze_angle_y?: number[];
+  hand_eye_activity_results?: any;
   aus_sum: number;
   blinks: number;
   active: number;
@@ -193,6 +217,7 @@ interface AnalysisResults {
   readability_score: string;
   cefr: string;
   ielts: string;
+  floss_spans: [number, number][];
 }
 
 export default function ResultsDisplay({ results }: { results: AnalysisResults }) {
@@ -466,26 +491,45 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             </ResponsiveContainer>
         </motion.div>
 
-        {/* Tone Analysis (Custom Tone Results) */}
-        {/* {results.custom_tone_results && results.custom_tone_results.length > 0 && ( */}
+        {/* Hand and Eye Activity Results */}
+        {results.hand_eye_activity_results && (
         <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7 }}
             className="border-card border-red-500 bg-red-50 p-6 shadow-xl rounded-xl"
           >
-            <h3 className="font-display text-lg text-red-700 mb-2">Facial & hand activity</h3>
-            <ul className="space-y-2">
-              {results.custom_tone_results.map(([score, label, emoji], idx) => (
-                <li key={idx} className="flex items-center space-x-2">
-                  <span className="text-2xl">{emoji}</span>
-                  <span className="font-medium text-gray-800">{label}</span>
-                  <span className="ml-auto font-semibold text-red-600">{(score * 100).toFixed(1)}%</span>
-                </li>
-              ))}
-            </ul>
+            {/* <h3 className="font-display text-lg text-red-700 mb-2">Hand & Eye Activity</h3> */}
+            <div className="space-y-3 text-sm">
+              {/* Hand Activity */}
+              {results.hand_eye_activity_results.hand_activity && (
+                <div>
+                  <h4 className="font-semibold text-red-600 mb-2">Hand Activity:</h4>
+                  <div className="space-y-1 text-gray-700">
+                    <p>Left Hand Avg: {results.hand_eye_activity_results.hand_activity.left_hand_avg_activity}%</p>
+                    <p>Right Hand Avg: {results.hand_eye_activity_results.hand_activity.right_hand_avg_activity}%</p>
+                    <p>Combined Avg: {results.hand_eye_activity_results.hand_activity.avg_combined_activity}%</p>
+                    <p>Distance Changes: {results.hand_eye_activity_results.hand_activity.total_distance_changes}</p>
+                    <p>Avg Distance Change/Frame: {results.hand_eye_activity_results.hand_activity.avg_distance_change_per_frame}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Eye Activity */}
+              {results.hand_eye_activity_results.eye_activity && (
+                <div>
+                  <h4 className="font-semibold text-red-600 mb-2">Eye Activity:</h4>
+                  <div className="space-y-1 text-gray-700">
+                    <p>Left Eyebrow Avg: {results.hand_eye_activity_results.eye_activity.left_eye_avg_activity}%</p>
+                    <p>Right Eyebeow Avg: {results.hand_eye_activity_results.eye_activity.right_eye_avg_activity}%</p>
+                    <p>Combined Eyebrows Avg: {results.hand_eye_activity_results.eye_activity.avg_combined_eye_activity}%</p>
+                  </div>
+                </div>
+              )}
+              
+            </div>
           </motion.div>
-        {/* )} */}
+        )}
 
         {/* Volume Analysis Chart */}
         <motion.div
@@ -502,7 +546,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
                 }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffe0b2" />
                     <XAxis dataKey="time" label={{ value: "Time Segment", position: "insideBottom", offset: -5 }} hide={true} /> {/* Hide X-axis labels if too many */}
-                    <YAxis label={{ value: "Volume (%)", angle: -90, position: "insideLeft" }} />
+                    <YAxis label={{ value: "Volume (db)", angle: -90, position: "insideLeft" }} />
                     <Tooltip />
                     <Legend />
                     <Bar dataKey="Volume" fill="#fb923c" />
@@ -547,7 +591,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       </div>  
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-        {/* Original Transcript */}
+          {/* Original Transcript */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -555,7 +599,12 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             className="border-card border-green-500 bg-green-50 p-6 shadow-xl rounded-xl"
           >
             <h3 className="font-display text-xl text-green-700 mb-4">Original Transcript</h3>
-            <p className="font-body text-gray-800 leading-relaxed">{results.transcript}</p>
+            <p 
+              className="font-body text-gray-800 leading-relaxed"
+              dangerouslySetInnerHTML={{ 
+                __html: applyUnderlinesToText(results.transcript, results.floss_spans || []) 
+              }}
+            />
           </motion.div>
 
           {/* Corrected Transcript with Highlights */}
