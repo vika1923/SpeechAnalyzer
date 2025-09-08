@@ -76,7 +76,7 @@ def send_gpt5nano_request(prompt, text, max_completion_tokens=500):
         return None
 
 # Legacy function for backward compatibility
-def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=1000):
+def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=50000):
     """Legacy function - routes to appropriate model-specific function"""
     if model == nano:
         return send_gpt5nano_request(prompt, text, max_tokens)
@@ -96,7 +96,7 @@ Do not output the scores below 4.0 and just output "4.0" if the score is below 4
     else:
         return send_gpt4o_request(prompt, text, 0.3, max_tokens)
 
-def fix_punctuation_and_paragraphs(text, use_nano=True, max_tokens=2000) -> Optional[str]:
+def fix_punctuation_and_paragraphs(text, use_nano=True, max_tokens=50000) -> Optional[str]:
     prompt = \
 """You are a professional text editor. 
 Your job is to fix all the punctuation mistakes and separate the text into paragraphs so that it can be published. 

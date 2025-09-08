@@ -19,6 +19,7 @@ import parts_of_speech
 import read_volume
 import rate_of_speech
 from done_with_some_llm import grammar_tone, sapling
+import counts
 import openface
 # from gramformer import Gramformer # Import Gramformer
 import pose_tracking
@@ -111,7 +112,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # Calculate word count
         logger.info("Counting words")
         word_count = rate_of_speech.count_words(timestamped_transcript_by_words)
-        
+
         # Combine words into a single unpunctuated string
         full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words.items())
         jobs[job_id]["progress"] = 40
@@ -120,6 +121,10 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         logger.info("Adding punctuation")
         full_text = grammar_tone.fix_punctuation_and_paragraphs(full_unpunctuated_text)
         logger.info(f"FULL TEXT: {full_text}")
+
+        sentences_count = counts.count_sentences(full_text)
+        letters_count = counts.count_letters(full_text)
+        paragraphs_count = counts.count_paragraphs(full_text)
 
         if full_text is None:
             jobs[job_id]["status"] = "failed"
@@ -229,6 +234,9 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # Prepare final results
         json_content = {
             "word_count": word_count,
+            "sentence_count": sentences_count,
+            "paragraph_count": paragraphs_count,
+            "letter_count": letters_count,
             "parts_of_speech": parts_of_speech_dict,
             "rate_of_speech_points": rate_of_speech_points,
             "volume_points": volume_points,
