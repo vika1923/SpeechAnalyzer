@@ -44,7 +44,7 @@ WORKDIR /models
 RUN wget https://github.com/TadasBaltrusaitis/OpenFace/releases/download/OpenFace_v2.2.0/au_predictors.zip && \
     unzip au_predictors.zip && rm au_predictors.zip
 
----
+
 
 # Stage 2: Final minimal image
 FROM python:3.11-slim as final

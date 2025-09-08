@@ -181,8 +181,11 @@ interface AnalysisResults {
   grammar_mistakes: [[number, number], string, string][];
   custom_tone_results: [number, string, string][];
   hand_position_results: string;
-  gaze_angle_x: number[];
-  gaze_angle_y: number[];
+  // Backend currently returns gaze_x/gaze_y; keep backward-compat with gaze_angle_x/gaze_angle_y
+  gaze_x?: number[];
+  gaze_y?: number[];
+  gaze_angle_x?: number[];
+  gaze_angle_y?: number[];
   aus_sum: number;
   blinks: number;
   active: number;
@@ -193,6 +196,83 @@ interface AnalysisResults {
 }
 
 export default function ResultsDisplay({ results }: { results: AnalysisResults }) {
+  // Prepare gaze arrays with fallback to older field names
+  const gazeX: number[] = (results.gaze_x ?? results.gaze_angle_x ?? []) as number[];
+  const gazeY: number[] = (results.gaze_y ?? results.gaze_angle_y ?? []) as number[];
+
+  // Prepare raw-range-based plotting (supports negative and positive values)
+  const gazePlotData = (() => {
+    const length = Math.min(gazeX.length, gazeY.length);
+    const xs = gazeX.slice(0, length);
+    const ys = gazeY.slice(0, length);
+    const hasData = length > 0;
+    const minX = hasData ? Math.min(...xs) : 0;
+    const maxX = hasData ? Math.max(...xs) : 1;
+    const minY = hasData ? Math.min(...ys) : 0;
+    const maxY = hasData ? Math.max(...ys) : 1;
+    const spanX = maxX - minX || 1;
+    const spanY = maxY - minY || 1;
+    return { xs, ys, minX, maxX, minY, maxY, spanX, spanY, length };
+  })();
+
+  const GazeScatterPlot = () => {
+    const PADDING_LEFT = 10;
+    const PADDING_RIGHT = 5;
+    const PADDING_TOP = 6;
+    const PADDING_BOTTOM = 12;
+    const INNER_WIDTH = 100 - PADDING_LEFT - PADDING_RIGHT;
+    const INNER_HEIGHT = 100 - PADDING_TOP - PADDING_BOTTOM;
+
+    const mapX = (x: number) => PADDING_LEFT + ((x - gazePlotData.minX) / gazePlotData.spanX) * INNER_WIDTH;
+    const mapY = (y: number) => PADDING_TOP + ((gazePlotData.maxY - y) / gazePlotData.spanY) * INNER_HEIGHT;
+
+    const zeroX = (gazePlotData.minX <= 0 && gazePlotData.maxX >= 0) ? mapX(0) : null;
+    const zeroY = (gazePlotData.minY <= 0 && gazePlotData.maxY >= 0) ? mapY(0) : null;
+
+    return (
+      <div className="w-full">
+        <div className="text-sm text-gray-600 mb-2">
+          <span>Samples: {gazePlotData.length}</span>
+        </div>
+        <svg viewBox="0 0 100 100" className="w-full h-64 bg-white rounded-md border border-yellow-200">
+          {/* Frame */}
+          <rect x={PADDING_LEFT} y={PADDING_TOP} width={INNER_WIDTH} height={INNER_HEIGHT} fill="#fff" stroke="#ddd" strokeWidth="0.5" />
+
+          {/* Zero axes if within range */}
+          {zeroX !== null && (
+            <line x1={zeroX} y1={PADDING_TOP} x2={zeroX} y2={PADDING_TOP + INNER_HEIGHT} stroke="#bbb" strokeWidth="0.6" />
+          )}
+          {zeroY !== null && (
+            <line x1={PADDING_LEFT} y1={zeroY} x2={PADDING_LEFT + INNER_WIDTH} y2={zeroY} stroke="#bbb" strokeWidth="0.6" />
+          )}
+
+          {/* Points */}
+          {gazePlotData.xs.map((x, idx) => (
+            <circle key={idx} cx={mapX(x)} cy={mapY(gazePlotData.ys[idx])} r={1.5} fill="#eab308" fillOpacity="0.85" />
+          ))}
+
+          {/* Axis labels: min, 0, max on both axes */}
+          {/* X axis labels */}
+          <text x={PADDING_LEFT} y={PADDING_TOP + INNER_HEIGHT + 8} fontSize="3" fill="#666" textAnchor="start">{gazePlotData.minX.toFixed(1)}</text>
+          {zeroX !== null && (
+            <text x={zeroX} y={PADDING_TOP + INNER_HEIGHT + 8} fontSize="3" fill="#666" textAnchor="middle">0</text>
+          )}
+          <text x={PADDING_LEFT + INNER_WIDTH} y={PADDING_TOP + INNER_HEIGHT + 8} fontSize="3" fill="#666" textAnchor="end">{gazePlotData.maxX.toFixed(1)}</text>
+
+          {/* Y axis labels */}
+          <text x={PADDING_LEFT - 2} y={PADDING_TOP + INNER_HEIGHT} fontSize="3" fill="#666" textAnchor="end">{gazePlotData.minY.toFixed(1)}</text>
+          {zeroY !== null && (
+            <text x={PADDING_LEFT - 2} y={zeroY + 1} fontSize="3" fill="#666" textAnchor="end">0</text>
+          )}
+          <text x={PADDING_LEFT - 2} y={PADDING_TOP + 3} fontSize="3" fill="#666" textAnchor="end">{gazePlotData.maxY.toFixed(1)}</text>
+        </svg>
+        <div className="flex justify-between text-xs text-gray-600 mt-1">
+          <span>Left (neg)</span>
+          <span>Right (pos)</span>
+        </div>
+      </div>
+    );
+  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
@@ -445,15 +525,19 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             <StickmanVisualization handPositionData={results.hand_position_results} />
           </motion.div>
         )}
-        {/* Word Count */}
+        {/* Gaze Analysis */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
           className="border-card border-yellow-500 bg-yellow-50 p-6 shadow-xl rounded-xl"
         >
-          <h3 className="font-display text-lg text-yellow-700 mb-2">Word Count</h3>
-          <p className="text-3xl font-bold text-yellow-600">{results.word_count}</p>
+          <h3 className="font-display text-lg text-yellow-700 mb-3">Gaze Analysis</h3>
+          {gazePlotData.length > 0 ? (
+            <GazeScatterPlot />
+          ) : (
+            <p className="text-yellow-700">No gaze data available.</p>
+          )}
         </motion.div>
       </div>
 
