@@ -74,8 +74,8 @@ WORKDIR /app
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install -r requirements.txt && \
-    pip install fastapi[all] uvicorn
+RUN pip install --timeout=100 --retries=10 -r requirements.txt && \
+    pip install --timeout=100 --retries=10 fastapi[all] uvicorn
 
 # Download NLTK data
 RUN python -c "import nltk; nltk.download('universal_tagset')" && \

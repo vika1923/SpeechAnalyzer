@@ -1,14 +1,8 @@
 import numpy as np
 from scipy.io import wavfile
-import logging
+from my_logger import get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 def get_rms_per_segment(audio_location: str, segment_duration_sec: float=2):
     logger.info(f"get_rms_per_segment called for {audio_location}")
@@ -25,26 +19,48 @@ def get_rms_per_segment(audio_location: str, segment_duration_sec: float=2):
 
         results = []
 
-        first_sample = None
-
         for i in range(num_segments):
             start = i * segment_samples
             end = start + segment_samples
             segment = data[start:end]
             rms = np.sqrt(np.mean(segment**2))
-            if i == 0:
-                first_sample = rms.item() if rms.item() != 0 else 1e-8  # avoid division by zero
+            # Avoid log(0) by setting a minimum value
+            if rms == 0:
+                db = -np.inf
+            else:
+                db = 20 * np.log10(rms)
             timestamp = i * segment_duration_sec
-            normalized_rms = rms.item() / first_sample if first_sample else 0.0
-            results.append((timestamp, normalized_rms))
+            results.append((timestamp, db))
         
-        # print("RESULTS FROM READVOLUMEPY:", results)
-        logger.info(f"Successfully calculated RMS for {audio_location}")
+        logger.info(f"Successfully calculated dB for {audio_location}")
         return results
     except Exception as e:
         logger.error(f"Error in get_rms_per_segment for {audio_location}: {e}", exc_info=True)
         raise
 
+def assign_volume_points(volume:float):
+    if volume < 30:
+        return 0
+    elif volume < 37:
+        return 1
+    elif volume < 43:
+        return 2
+    elif volume < 48:
+        return 3
+    elif volume < 53:
+        return 4
+    elif volume < 58:
+        return 5
+    elif volume < 64:
+        return 6
+    elif volume < 70:
+        return 7
+    elif volume < 78:
+        return 8
+    elif volume < 85:
+        return 9
+    else:
+        return 10
 # path = "video_audios/scream.wav"
 # segments = get_rms_per_segment(audio_location=path, segment_duration_sec=3)
 

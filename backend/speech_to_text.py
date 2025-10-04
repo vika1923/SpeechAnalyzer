@@ -1,17 +1,11 @@
 from faster_whisper import WhisperModel
 from typing import Dict
 from custom_types import TimeStamp
-import logging
+from my_logger import get_logger
 
 # audio_path = "SoliyevShort.wav"
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 model_size = "large-v3"
 model = WhisperModel(model_size, device="cpu", compute_type="int8")

@@ -16,9 +16,6 @@ interface AnalysisResults {
   grammar_mistakes: [[number, number], string, string][];
   custom_tone_results: [number, string, string][];
   hand_position_results: string;
-  gaze_angle_x: number;
-  gaze_angle_y: number;
-  all_aus_sum: number;
 }
 
 export default function Results() {
@@ -41,24 +38,39 @@ export default function Results() {
   }, []); // Empty dependency array ensures this runs once on mount
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex flex-col items-center p-4 sm:p-8 font-inter">
-      <header className="w-full max-w-6xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
-        <a href="/" className="text-white text-2xl font-bold font-display">
-          Speech Analyzer
+    <div className=" relative overflow-hidden min-h-screen w-full bg-[#dbc7fe] flex flex-col items-center p-4 sm:p-8 font-inter">
+      <div className="absolute top-1/4 left-0 -translate-y-1/2 -translate-x-1/2 
+              w-64 h-64 bg-[#80003a] rotate-45">
+      </div>
+
+      <div className="absolute top-1/4 right-0 -translate-y-1/2 translate-x-1/2 
+                  w-64 h-64 bg-[#80003a] rotate-45">
+      </div>
+      <div className="absolute top-3/4 left-0 -translate-y-1/2 -translate-x-1/2 
+              w-64 h-64 bg-[#80003a] rotate-45">
+      </div>
+
+      <div className="absolute top-3/4 right-0 -translate-y-1/2 translate-x-1/2 
+                  w-64 h-64 bg-[#80003a] rotate-45">
+      </div>
+
+      <header className="relative w-full max-w-7xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
+        <a href="/" className="text-[#80003a] text-2xl font-bold font-display">
+          CommAI
         </a>
         <nav className="space-x-4">
-          <a href="/about" className="text-white hover:text-blue-200 transition-colors">
+          <a href="/about" className="text-[#80003a] hover:text-[#511b2c] transition-colors">
             About
           </a>
-          <a href="/results" className="text-white hover:text-blue-200 transition-colors">
+          <a href="/results" className="text-[#80003a] hover:text-[#511b2c] transition-colors">
             Results
           </a>
         </nav>
       </header>
       
-      <main className="container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
-        <div className="w-full md:w-1/2 lg:w-1/2 mx-auto">
-          <h1 className="text-4xl font-bold mb-6 text-white text-center">Analysis Results</h1>
+      <main className="relative w-full  max-w-full px-5 py-8 flex-grow flex flex-col items-center justify-center">
+        <div className="w-full mx-auto">
+          <h1 className="text-4xl font-bold mb-6 text-[#80003a] text-center">Analysis Results</h1>
           {error && <p className="text-red-300 text-center">{error}</p>}
           {results ? (
             <>
@@ -75,13 +87,13 @@ export default function Results() {
               </div>
             </>
           ) : (
-            !error && <p className="text-white text-center">Loading results...</p>
+            !error && <p className="text-[#80003a] text-center">Loading results...</p>
           )}
         </div>
       </main>
 
-      <footer className="w-full max-w-6xl mx-auto text-center py-8 text-white text-sm">
-        &copy; {new Date().getFullYear()} Speech Analyzer. All rights reserved.
+      <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-[#80003a] text-sm">
+        &copy; {new Date().getFullYear()} CommAI. All rights reserved.
       </footer>
     </div>
   );

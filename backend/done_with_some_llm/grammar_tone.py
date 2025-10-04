@@ -1,41 +1,120 @@
-import requests
 import os
 import json
-import logging
-# import rotateapikeys
+from typing import Optional, Tuple
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from my_logger import get_logger
+from openai import OpenAI
 
 # 2. assess the text on scale from 1 to 10 for the following categories: confident, assertive, inspirational, informative, direct.
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    filename='api_server.log',
-    filemode='a'
-)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
-API_KEY = os.getenv("OR_API_KEY")
-logger.info(f"OR_API_KEY: {'Set' if API_KEY else 'Not set'}")
+API_KEY = os.getenv("OPENAI_API_KEY")
+logger.info(f"OPENAI_API_KEY: {'Set' if API_KEY else 'Not set'}")
 
-# almaz = "meta-llama/llama-4-maverick:free"
-almaz = "deepseek/deepseek-chat-v3-0324:free"
+# Initialize OpenAI client
+client = OpenAI(api_key=API_KEY) if API_KEY else None
 
-def fix_grammar(prompt, model=almaz):
-    if not API_KEY:
+# Use GPT-4o-mini as the default model
+default_model = "gpt-4o-mini"
+# nano = "gpt-5-nano"
+nano = "gpt-4o-mini"
+
+def send_gpt4o_request(prompt, text, temperature=0.3, max_tokens=500):
+    """Send request to GPT-4o-mini with standard parameters"""
+    if not client:
+        logger.error("OpenAI client not initialized - API key not set")
         return None
+    
+    logger.info(f"Sending request to GPT-4o-mini with prompt: {prompt[:50]}..., text: {text[:50]}..., temperature: {temperature}, max_tokens: {max_tokens}")
+    
+    try:
+        response = client.chat.completions.create(
+            model=default_model,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": text}
+            ],
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
         
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content":"""You are a professional public speaking assessor. You will be given a part of a public speech transcript. Your task is to:
-    1. correct all the grammar mistakes, excluding punctuation mistakes.
-    2. correct all the semantic mistakes (fix misused words and transitions).
-    3. correct malapropisms and misused words.
+        logger.info(f"GPT-4o-mini response received successfully")
+        content = response.choices[0].message.content
+        return content
+        
+    except Exception as e:
+        logger.error(f"Error calling GPT-4o-mini API: {str(e)}")
+        return None
+
+def send_gpt5nano_request(prompt, text, max_completion_tokens=500):
+    """Send request to GPT-5-nano with fixed temperature=1 and max_completion_tokens"""
+    if not client:
+        logger.error("OpenAI client not initialized - API key not set")
+        return None
+    
+    logger.info(f"Sending request to GPT-5-nano with prompt: {prompt[:50]}..., text: {text[:50]}..., max_completion_tokens: {max_completion_tokens}")
+    
+    try:
+        response = client.chat.completions.create(
+            model=nano,
+            messages=[
+                {"role": "system", "content": prompt},
+                {"role": "user", "content": text}
+            ],
+            temperature=1,  # Fixed temperature for GPT-5-nano
+            max_completion_tokens=max_completion_tokens
+        )
+        
+        logger.info(f"GPT-5-nano response received successfully")
+        content = response.choices[0].message.content
+        print(response)
+        return content
+        
+    except Exception as e:
+        logger.error(f"Error calling GPT-5-nano API: {str(e)}")
+        return None
+
+# Legacy function for backward compatibility
+def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=16000):
+    """Legacy function - routes to appropriate model-specific function"""
+    if model == nano:
+        return send_gpt5nano_request(prompt, text, max_tokens)
+    else:
+        return send_gpt4o_request(prompt, text, temperature, max_tokens)
+
+def get_ielts(text, use_nano=True, max_tokens=10000) -> Optional[str]:
+    prompt = \
+"""You are an IELTS and CEFR scorer.
+You will be given a text. Your task is to output the CEFR score for the text.
+In addition to that give me the IELTS score for the text. Evaluate the text's English level based on words and grammatical structures.
+Make sure that IELTS scores are consistent with the text and represent the true score. Format the output like this: "7.5" or "8.0". Do not output anything else and just stop at this.
+Do not output the scores below 4.0 and just output "4.0" if the score is below 4.0."""
+    
+    if use_nano:
+        return send_gpt5nano_request(prompt, text, max_tokens)
+    else:
+        return send_gpt4o_request(prompt, text, 0.3, max_tokens)
+
+def fix_punctuation_and_paragraphs(text, use_nano=True, max_tokens=4000) -> Optional[str]:
+    prompt = \
+"""You are a professional text editor. 
+Your job is to fix all the punctuation mistakes and separate the text into paragraphs so that it can be published. 
+You will be given a public speech and you should output the corrected text. Do not output anything else or change the content of the text."""
+    
+    if use_nano:
+        return send_gpt5nano_request(prompt, text, max_tokens)
+    else:
+        return send_gpt4o_request(prompt, text, 0.3, max_tokens)
+
+def fix_grammar(text, use_nano=False, max_tokens=4000) -> Optional[str]:
+    prompt = \
+"""You are a professional public speaking assessor. You will be given a part of a public speech transcript. Your task is to:
+    1. Correct all the grammar mistakes, excluding punctuation mistakes.
+    2. Correct all the semantic mistakes (fix misused words and transitions).
+    3. Correct malapropisms and misused words.
+>>>>>>> 409c33d656d6084641acc20e72fcc537f68e7851
 
 IMPORTANT: You must provide the actual corrections, not just a header. For each mistake you find:
     - Format it as: "<incorrect_phrase> should be <correct_phrase>"
@@ -43,44 +122,54 @@ IMPORTANT: You must provide the actual corrections, not just a header. For each 
     - If no mistakes are found, say "No corrections needed"
     - Only output the corrected mistakes and the corrected text.
 
-After You listed all the mistakes, output the corrected text itself.
+After you listed all the mistakes, output the corrected text itself.
 
 
 Example output:
     "I go to Tashkent metro yesterday" should be "I went to Tashkent metro yesterday"
     "it would be wonderful beautiful" should be "it was wonderfully beautiful"
-    "escavators" should be "escalators" """},
-            {"role": "user", "content": prompt}
-        ],
-        "temperature": 0.3,
-        "max_tokens": 500
-    }
+    "escavators" should be "escalators" """
 
-    response = requests.post(url, headers=headers, json=payload, timeout=30)
-    logger.info(f"Raw response text from OpenRouter: {response.text}")
-    
-    data = response.json()
-    content = data["choices"][0]["message"]["content"]
-    return content
+    if use_nano:
+        return send_gpt5nano_request(prompt, text, max_tokens)
+    else:
+        return send_gpt4o_request(prompt, text, 0.3, max_tokens)
+
+def get_ielts_and_cefr(text_to_check) -> Tuple[str, str] | None:
+    ielts = min(get_ielts(text_to_check).split())
+    logger.info(ielts)
+    if ielts in ["4.0", "4.5", "5.0"]:
+        return ielts, "B1"
+    elif ielts in ["5.5", "6.0", "6.5"]:
+        return ielts, "B2"
+    elif ielts in ["7.0", "7.5", "8.0"]:
+        return ielts, "C1"
+    elif ielts in ["8.5", "9.0"]:
+        return ielts, "C2"
+    else: 
+        return None
 
 
 def get_mistakes_and_text(text_to_check):
-    if not API_KEY:
+    if not client:
         return [], text_to_check, []
-    
+
     # EDIT!
     corrected_unparsed = fix_grammar(text_to_check)
-    
+
+    if corrected_unparsed is None:
+        return [], text_to_check, []
+
     corrected_unparsed = corrected_unparsed.strip()
 
     # corrected_unparsed = "\"despite this being a math -weighted technical major\" should be \"despite this being a math-heavy technical major\"\n\"it's called Nostrum of the Underground and it tells about Nostrum of the Underground\" should be \"it's called Notes from the Underground and it's about the Underground Man\"\n\nCorrected text:\nHello, my major is software engineering but despite this being a math-heavy technical major, I love reading. I have a lot of books right over here and my favorite author is Fyodor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? It's called Notes from the Underground and it's about the Underground Man."
-    
+
     mistakes_lines = []
     corrected_text = text_to_check
 
     lines = corrected_unparsed.splitlines()
     correction_spans = []
-    
+
     # Find where the corrected text starts
     corrected_text_start_idx = -1
     for i, line in enumerate(lines):
@@ -88,19 +177,18 @@ def get_mistakes_and_text(text_to_check):
         if line_lower.startswith("corrected text:") or line_lower == "corrected text":
             corrected_text_start_idx = i
             break
-    
+
     # Process only the correction lines (before "Corrected text:")
     lines_to_process = lines[:corrected_text_start_idx] if corrected_text_start_idx != -1 else lines
-    
+
     for line in lines_to_process:
         line = line.strip()
         if not line:
             continue
-            
         # Only add lines that contain actual corrections
         if '"' in line and "should be" in line:
             mistakes_lines.append(line)
-            
+  
             first_quote = line.find('"')
             second_quote = line.find('"', first_quote + 1)
             incorrect_phrase = line[first_quote + 1:second_quote]
@@ -118,7 +206,7 @@ def get_mistakes_and_text(text_to_check):
                 correction_spans.append((idx, idx + len(correct_phrase)))
                 # Replace only the first occurrence in corrected_text
                 corrected_text = corrected_text[:idx] + correct_phrase + corrected_text[idx + len(incorrect_phrase):]
-    
+
     # Extract the actual corrected text if it exists
     if corrected_text_start_idx != -1 and corrected_text_start_idx + 1 < len(lines):
         # Get all lines after "Corrected text:" and join them
@@ -129,6 +217,17 @@ def get_mistakes_and_text(text_to_check):
 
     return mistakes_lines, corrected_text, correction_spans
 
-# t = "Hey! So yesterday I go to tashkent metro and it would be wonderful beautiful. The new trainers there are shiny and fast. And they also install new escavators - that's good because I don't need to climb the stairs anymore. it used to bee really tiring"
+if __name__ == "__main__":
+    t = """Reading literature is good for everyone. Literature means stories, poems, and plays written by people. When we read these, many good things happen.
+First, reading makes our imagination strong. When we read about a dragon, a hero, or a faraway land, we see it in our mind. This helps us dream and create new ideas.
+Second, reading teaches us about people. Stories show us how others feel, think, and live. We learn to understand happiness, sadness, fear, and love. This makes us kinder.
+Third, reading helps us learn words. Every book has many new words. When we read more, we speak better and write better too.
+Fourth, reading gives us fun. Books can make us laugh, wonder, or feel excited. A good story is like a friend who never leaves us.
+Last, reading can give us hope. In stories, heroes face problems and still win. This teaches us not to give up.
+In short, literature is not just words. It is magic for the mind, a teacher for the heart, and joy for the soul."""
 
+<<<<<<< HEAD
 # print(get_mistakes_and_text("Hello, my major is software engineering but despite this being a math -weighted technical major, I love reading. I have a lot of books right over here and my favorite author is Fedor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? it's called Nostrum of the Underground and it tells about Nostrum of the Underground."))
+=======
+    print(get_mistakes_and_text(t))
+>>>>>>> 409c33d656d6084641acc20e72fcc537f68e7851

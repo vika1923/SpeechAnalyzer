@@ -1,6 +1,9 @@
 import subprocess 
+from typing import Dict, List
 import polars as pl
-import logging
+from my_logger import get_logger
+
+logger = get_logger(__name__)
 
 def extract_video(file_path, out_dir, file_name = "video", openface_path='/opt/OpenFace/build/bin/FeatureExtraction'): 
     subprocess.run([
@@ -12,24 +15,28 @@ def extract_video(file_path, out_dir, file_name = "video", openface_path='/opt/O
         '-aus'
     ])
 
-def get_gaze_and_aus(file_path):
+def get_face_info(file_path: str) -> Dict[str, List[float | List[float]]]:
     gaze = ["gaze_angle_x", "gaze_angle_y"]
     aus = [
         "AU01_r", "AU02_r", "AU04_r", "AU05_r", "AU06_r", "AU07_r",
         "AU09_r", "AU10_r", "AU12_r", "AU14_r", "AU15_r", "AU17_r",
-        "AU20_r", "AU23_r", "AU25_r", "AU26_r", "AU45_r",
+        "AU20_r", "AU23_r", "AU25_r", "AU26_r", "AU45_r", "AU45_c"
     ]
     print("Yes")
     df = pl.read_csv(file_path, columns=gaze + aus)
 
     result = {}
-
+    gaze_lists = {col: df[col].to_list() for col in gaze}
     # Sum of absolute gaze angles
-    gaze_sums = df.select([pl.col(col).abs().mean().alias(col + "_abs_sum") for col in gaze])
-    result.update(dict(zip(gaze, gaze_sums.row(0))))
+    # gaze_sums = df.select([pl.col(col).abs().mean().alias(col + "_abs_sum") for col in gaze])
+    result.update(gaze_lists)
 
     # Sum of absolute diffs for AUs
     for col in aus:
+        if col == "AU45_c":
+            # sum the blinks
+            result["blinks"] = df[col].sum()
+            continue
         diff_sum = df.select(
             (pl.col(col) - pl.col(col).shift(1)).abs().mean().alias(col + "_diff_sum")
         )[0, 0]
@@ -45,21 +52,33 @@ def get_all_aus_sum(dick):
     return sum
 
 def return_numbers(file_path, openface_path='/opt/OpenFace/build/bin/FeatureExtraction', temp_dir = "app/videos/openface"):
-    logging.basicConfig(level=logging.INFO)
     try:
         # temp_dir = "/app/videos/openface"  # Use absolute path that exists in container
         extract_video(file_path, temp_dir, openface_path=openface_path)
         print("No")
-        out = get_gaze_and_aus(temp_dir+"/video.csv") # add stuff
+        out = get_face_info(temp_dir+"/video.csv") # add stuff
         result = (out['gaze_angle_x'], out['gaze_angle_y'], get_all_aus_sum(out))
-        logging.info(f"return_numbers({file_path}) returns: {result}")
+        logger.info(f"return_numbers({file_path}) returns: {result}")
+        return result
     except Exception as e:
-        logging.error(f"return_numbers({file_path}) failed: {e}")
-        return (None, None, None)
-    return result
+        logger.error(f"return_numbers({file_path}) failed: {e}")
+        # Return default values instead of None to avoid breaking the pipeline
+        return (0.0, 0.0, 0.0)
+
+def extract_and_get_info(file_path, openface_path='/Users/almaz/PycharmProjects/SpeechAnalyzer/openFace/OpenFace/build/bin/FeatureExtraction', temp_dir="/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/tests"):
+    try:
+        # temp_dir = "/app/videos/openface"  # Use absolute path that exists in container
+        extract_video(file_path, temp_dir, openface_path=openface_path)
+        print("No")
+        out = get_face_info(temp_dir+"/video.csv") # add stuff
+        return out
+    except Exception as e:
+        logger.error(f"extract_and_get_info({file_path}) failed: {e}")
+        # Return default values instead of None to avoid breaking the pipeline
+        return {}
 
 if __name__ == "__main__":
     print("Hello")
-    numbers = return_numbers('/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/Vika.mov', 
+    numbers = extract_and_get_info('/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/Vika.mov', 
                              '/Users/almaz/PycharmProjects/SpeechAnalyzer/openFace/OpenFace/build/bin/FeatureExtraction', 
                              '/Users/almaz/PycharmProjects/SpeechAnalyzer/videos/tests')
