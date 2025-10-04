@@ -31,20 +31,20 @@ def readibility_score(nsentences: int, words: List[str]):
     if rsc < 10:
         return "Professional"
     elif rsc < 30:
-        return "College graduate"
+        return "College Graduate"
     elif rsc < 50:
         return "College"
     elif rsc < 60:
-        return "10th to 12th grade"
+        return "Grade 10 - 12"
     elif rsc < 70:
-        return "8th & 9th grade"
+        return "Grade 8 - 9"
     elif rsc < 80:
-        return "7th grade"
+        return "Grade 7"
     elif rsc < 90:
-        return "6th grade"
+        return "Grade 6"
     elif rsc <= 100:
-        return "5th grade"
+        return "Grade 5"
     else:
-        return "Too easy to understand"
+        return "42"
 
 

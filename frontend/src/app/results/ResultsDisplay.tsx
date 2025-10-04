@@ -307,7 +307,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       className="space-y-6 reveal w-full"
     >
       <div className='flex items-center justify-center pt-2'>
-        <h1 className='text-xl text-[#80003a]'>Verbal part</h1>
+        <h1 className='text-xl text-[#80003a]'>Verbal Communication</h1>
       </div>
 
       {/* Grid for various analysis metrics */}
@@ -434,7 +434,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             transition={{ delay: 0.8 }}
             className="md:col-span-1 border-card border-indigo-700 bg-indigo-50 p-6 shadow-xl rounded-xl"
         >
-            <h3 className="font-display text-lg text-indigo-700 mb-4">Active & Passive voice</h3>
+            <h3 className="font-display text-lg text-indigo-700 mb-4">Active & Passive Voice</h3>
             <div className="flex flex-col md:flex-row items-center justify-center">
                 <ResponsiveContainer width="100%" height={300}>
                     <BarChart
@@ -460,7 +460,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       </div>
 
       <div className='flex items-center justify-center pt-2'>
-        <h1 className='text-xl text-[#80003a]'>Visual part</h1>
+        <h1 className='text-xl text-[#80003a]'>Non-Verbal Communication</h1>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -504,7 +504,8 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
               {/* Hand Activity */}
               {results.hand_eye_activity_results.hand_activity && (
                 <div>
-                  <h4 className="font-semibold text-red-600 mb-2">Hand Activity:</h4>
+                  <h4 className="font-display text-lg text-red-700 mb-2">Hand Activity:</h4>
+                  {/* <h3 className="font-display text-lg text-teal-700 mb-2">Rate of Speech (Words/Min)</h3> */}
                   <div className="space-y-1 text-gray-700">
                     <p>Left Hand Avg: {results.hand_eye_activity_results.hand_activity.left_hand_avg_activity}%</p>
                     <p>Right Hand Avg: {results.hand_eye_activity_results.hand_activity.right_hand_avg_activity}%</p>
@@ -518,7 +519,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
               {/* Eye Activity */}
               {results.hand_eye_activity_results.eye_activity && (
                 <div>
-                  <h4 className="font-semibold text-red-600 mb-2">Eye Activity:</h4>
+                  <h4 className="font-display text-lg text-red-700 mb-2">Oculesics (Eyes Activity):</h4>
                   <div className="space-y-1 text-gray-700">
                     <p>Left Eyebrow Avg: {results.hand_eye_activity_results.eye_activity.left_eye_avg_activity}%</p>
                     <p>Right Eyebeow Avg: {results.hand_eye_activity_results.eye_activity.right_eye_avg_activity}%</p>
@@ -538,7 +539,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             transition={{ delay: 0.6 }}
             className="border-card border-orange-500 bg-orange-50 p-6 shadow-xl rounded-xl"
         >
-            <h3 className="font-display text-lg text-orange-700 mb-2">Volume Analysis</h3>
+            <h3 className="font-display text-lg text-orange-700 mb-2">Volume Levels Analysis</h3>
             <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={Object.entries(results.volume_points).map(([time, volume]) => ({
                     time: time,
@@ -587,7 +588,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
 
 
       <div className='flex items-center justify-center pt-2'>
-        <h1 className='text-xl text-[#80003a]'>Text part</h1>
+        <h1 className='text-xl text-[#80003a]'>Speech Content</h1>
       </div>  
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
@@ -608,35 +609,25 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
           </motion.div>
 
           {/* Corrected Transcript with Highlights */}
-          {/* {results.corrected_transcript && results.corrected_transcript !== results.transcript && ( */}
-            {/* <motion.div
+          {results.corrected_transcript && (
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
               className="border-card border-blue-500 bg-blue-50 p-6 shadow-xl rounded-xl"
-            > */}
-              {/* <h3 className="font-display text-xl text-blue-700 mb-4">Corrected Transcript</h3>
+            >
+              <h3 className="font-display text-xl text-blue-700 mb-4">Corrected Transcript</h3>
               <p
                 className="font-body text-gray-800 leading-relaxed grammar-highlight"
-                dangerouslySetInnerHTML={{ __html: results.corrected_transcript.replace(/<c>/g, '<c>').replace(/<\/c>/g, '</c>') }}
-              /> */}
-              {/*
-                <style jsx global>{`
-                  .grammar-highlight c {
-                    background-color: #ffd700;
-                    padding: 0 2px;
-                    border-radius: 3px;
-                    font-weight: bold;
-                    text-decoration: underline wavy #ff4500;
-                  }
-
-                  .grammar-highlight c:hover {
-                    cursor: help;
-                  }
-                `}</style>
-                */}
-            {/* </motion.div> */}
-          {/* )} */}
+                dangerouslySetInnerHTML={{ __html: results.corrected_transcript.replace(/<c>/g, '<span class="bg-yellow-300 px-1 rounded font-semibold underline decoration-wavy decoration-orange-500">').replace(/<\/c>/g, '</span>') }}
+              />
+              <style jsx global>{`
+                .grammar-highlight span {
+                  cursor: help;
+                }
+              `}</style>
+            </motion.div>
+          )}
 
           {/* Grammar Suggestions List */}
           {results.grammar_mistakes && results.grammar_mistakes.length > 0 && (

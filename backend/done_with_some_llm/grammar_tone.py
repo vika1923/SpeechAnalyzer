@@ -18,7 +18,8 @@ client = OpenAI(api_key=API_KEY) if API_KEY else None
 
 # Use GPT-4o-mini as the default model
 default_model = "gpt-4o-mini"
-nano = "gpt-5-nano"
+# nano = "gpt-5-nano"
+nano = "gpt-4o-mini"
 
 def send_gpt4o_request(prompt, text, temperature=0.3, max_tokens=500):
     """Send request to GPT-4o-mini with standard parameters"""
@@ -76,7 +77,7 @@ def send_gpt5nano_request(prompt, text, max_completion_tokens=500):
         return None
 
 # Legacy function for backward compatibility
-def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=50000):
+def send_api_request(prompt, text, model=default_model, temperature=0.3, max_tokens=16000):
     """Legacy function - routes to appropriate model-specific function"""
     if model == nano:
         return send_gpt5nano_request(prompt, text, max_tokens)
@@ -96,7 +97,7 @@ Do not output the scores below 4.0 and just output "4.0" if the score is below 4
     else:
         return send_gpt4o_request(prompt, text, 0.3, max_tokens)
 
-def fix_punctuation_and_paragraphs(text, use_nano=True, max_tokens=50000) -> Optional[str]:
+def fix_punctuation_and_paragraphs(text, use_nano=True, max_tokens=4000) -> Optional[str]:
     prompt = \
 """You are a professional text editor. 
 Your job is to fix all the punctuation mistakes and separate the text into paragraphs so that it can be published. 
@@ -107,7 +108,7 @@ You will be given a public speech and you should output the corrected text. Do n
     else:
         return send_gpt4o_request(prompt, text, 0.3, max_tokens)
 
-def fix_grammar(text, use_nano=False, max_tokens=500) -> Optional[str]:
+def fix_grammar(text, use_nano=False, max_tokens=4000) -> Optional[str]:
     prompt = \
 """You are a professional public speaking assessor. You will be given a part of a public speech transcript. Your task is to:
     1. Correct all the grammar mistakes, excluding punctuation mistakes.
@@ -135,6 +136,7 @@ Example output:
 
 def get_ielts_and_cefr(text_to_check) -> Tuple[str, str] | None:
     ielts = min(get_ielts(text_to_check).split())
+    logger.info(ielts)
     if ielts in ["4.0", "4.5", "5.0"]:
         return ielts, "B1"
     elif ielts in ["5.5", "6.0", "6.5"]:
@@ -224,4 +226,4 @@ Fourth, reading gives us fun. Books can make us laugh, wonder, or feel excited. 
 Last, reading can give us hope. In stories, heroes face problems and still win. This teaches us not to give up.
 In short, literature is not just words. It is magic for the mind, a teacher for the heart, and joy for the soul."""
 
-    print(get_ielts(t))
+    print(get_mistakes_and_text(t))

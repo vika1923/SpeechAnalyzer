@@ -56,7 +56,7 @@ export default function Results() {
 
       <header className="relative w-full max-w-7xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
         <a href="/" className="text-[#80003a] text-2xl font-bold font-display">
-          Speech Analyzer
+          CommAI
         </a>
         <nav className="space-x-4">
           <a href="/about" className="text-[#80003a] hover:text-[#511b2c] transition-colors">
@@ -93,7 +93,7 @@ export default function Results() {
       </main>
 
       <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-[#80003a] text-sm">
-        &copy; {new Date().getFullYear()} Speech Analyzer. All rights reserved.
+        &copy; {new Date().getFullYear()} CommAI. All rights reserved.
       </footer>
     </div>
   );

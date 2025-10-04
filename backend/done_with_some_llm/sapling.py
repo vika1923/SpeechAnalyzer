@@ -14,10 +14,10 @@ def get_tone(text):
     )
 
     if 200 <= response.status_code < 300:
-        # print("success")
+        print(response.json())
         return response.json()["overall"]
     else:
-        # print("fail")
+        print(response.json())
         return([[42, '42', '😐']])
 
 if __name__ == "__main__":
