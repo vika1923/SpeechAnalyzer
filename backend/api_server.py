@@ -262,7 +262,9 @@ def process_video_analysis_sync(job_id: str, file_path: str):
 
         # Analyze active
         logger.info("Looking at active/passive")
-        active, passive = active_passive.get_active_passive(full_text.split("."))
+        import re
+        sentences = re.split(r'[.?!]', full_text)
+        active, passive = active_passive.get_active_passive(sentences)
 
         # Add readability score
         logger.info("Looking at readability")   
