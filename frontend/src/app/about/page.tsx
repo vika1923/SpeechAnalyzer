@@ -12,25 +12,18 @@ export default function About() {
           {/* Main heading with a custom highlight color. */}
           <h1 className="text-blueaccent text-4xl font-bold">CommAI - CommLabAUT Team</h1>
           {/* Subheadline text with a muted foreground color for readability. */}
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="subheadline text-blackbase text-lg">
-                  Developed by: Bahodir Madatov, Viktoriya Kim, Almaz Umbetov
-              </p>
-              <p className="subheadline text-blackbase text-lg">
-                  Concept and Academic Expertise: Parveen Kumar
-              </p>
-              <p className="subheadline text-blackbase text-lg">
-                  Outreach Support: Asilbegim Nasirova, Shakrizoda Oripova
-              </p>
-              <p className="subheadline text-blackbase text-lg">
-                  Technical Mentoring: Dr Rajan Tripathi
-              </p>
-            </div>
-            <div className="ml-8">
-              <img src="/team.jpg" alt="Team photo" className="rounded-lg shadow-lg" width="350" />
-            </div>
-          </div>
+          <p className="subheadline text-blackbase text-lg">
+            Developed by: Bahodir Madatov, Viktoriya Kim, Almaz Umbetov
+          </p>
+          <p className="subheadline text-blackbase text-lg">
+            Concept and Academic Expertise: Parveen Kumar
+          </p>
+          <p className="subheadline text-blackbase text-lg">
+            Outreach Support: Asilbegim Nasirova, Shakrizoda Oripova
+          </p>
+          <p className="subheadline text-blackbase text-lg">
+            Technical Mentoring: Dr Rajan Tripathi
+          </p>
           {/* Link to navigate back to the home page. */}
           <div className="float mt-8">
             <Link

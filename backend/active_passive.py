@@ -1,8 +1,6 @@
 import spacy
 from typing import List, Tuple
 import sys
-
-from spacy.util import logger
 nlp = spacy.load("en_core_web_sm")
 
 def get_active_passive(senteces: List[str]) -> Tuple[int, int]:
@@ -13,7 +11,6 @@ def get_active_passive(senteces: List[str]) -> Tuple[int, int]:
     """
     active_voice = 0
     passive_voice = 0
-    # logger.info("SENTENCES," sentences)
     for sentence in senteces:
         doc = nlp(sentence)
         for token in doc:
