@@ -10,12 +10,19 @@ export default function About() {
         {/* Content card with custom border, background, and spacing. */}
         <div className="border-2 border-deepgreen bg-mintgreen p-8 space-y-6 rounded-lg shadow-lg">
           {/* Main heading with a custom highlight color. */}
-          <h1 className="text-blueaccent text-4xl font-bold">About Speech Analyzer</h1>
+          <h1 className="text-blueaccent text-4xl font-bold">CommAI - CommLabAUT Team</h1>
           {/* Subheadline text with a muted foreground color for readability. */}
           <p className="subheadline text-blackbase text-lg">
-            Speech Analyzer is a cutting-edge tool designed for analyzing spoken English from video.
-            Simply upload your video to receive instant, insightful feedback on your speech patterns,
-            pronunciation, and fluency!
+            Developed by: Bahodir Madatov, Viktoriya Kim, Almaz Umbetov
+          </p>
+          <p className="subheadline text-blackbase text-lg">
+            Concept and Academic Expertise: Parveen Kumar
+          </p>
+          <p className="subheadline text-blackbase text-lg">
+            Outreach Support: Asilbegim Nasirova, Shakrizoda Oripova
+          </p>
+          <p className="subheadline text-blackbase text-lg">
+            Technical Mentoring: Dr Rajan Tripathi
           </p>
           {/* Link to navigate back to the home page. */}
           <div className="float mt-8">

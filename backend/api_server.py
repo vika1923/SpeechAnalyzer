@@ -169,7 +169,10 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # Apply floss analysis to identify problematic speech patterns
         logger.info("Running floss analysis")
         word_boundary_mapping = create_word_boundary_mapping(timestamped_transcript_by_words, full_text)
-        floss_spans = predict_flaws.floss(word_boundary_mapping, threshhold=1.0)
+        try:
+            floss_spans = predict_flaws.floss(word_boundary_mapping, threshhold=1.0)
+        except:
+            floss_spans = []
         logger.info(f"Floss analysis found {len(floss_spans)} problematic spans")
 
         jobs[job_id]["progress"] = 50

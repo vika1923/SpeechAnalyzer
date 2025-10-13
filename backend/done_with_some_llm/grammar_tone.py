@@ -114,8 +114,6 @@ def fix_grammar(text, use_nano=False, max_tokens=4000) -> Optional[str]:
     1. Correct all the grammar mistakes, excluding punctuation mistakes.
     2. Correct all the semantic mistakes (fix misused words and transitions).
     3. Correct malapropisms and misused words.
->>>>>>> 409c33d656d6084641acc20e72fcc537f68e7851
-
 IMPORTANT: You must provide the actual corrections, not just a header. For each mistake you find:
     - Format it as: "<incorrect_phrase> should be <correct_phrase>"
     - List each correction on a new line
@@ -226,8 +224,4 @@ Fourth, reading gives us fun. Books can make us laugh, wonder, or feel excited. 
 Last, reading can give us hope. In stories, heroes face problems and still win. This teaches us not to give up.
 In short, literature is not just words. It is magic for the mind, a teacher for the heart, and joy for the soul."""
 
-<<<<<<< HEAD
-# print(get_mistakes_and_text("Hello, my major is software engineering but despite this being a math -weighted technical major, I love reading. I have a lot of books right over here and my favorite author is Fedor Dostoevsky. It's a very dark Russian author and here's a really nice book from him. Why I really like this book? it's called Nostrum of the Underground and it tells about Nostrum of the Underground."))
-=======
     print(get_mistakes_and_text(t))
->>>>>>> 409c33d656d6084641acc20e72fcc537f68e7851
