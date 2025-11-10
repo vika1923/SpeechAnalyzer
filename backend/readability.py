@@ -24,7 +24,7 @@ def readibility(nsentences: int, words: List[str]):
     syllables = 0
     for word in words:
         syllables += count_syllables(word)
-    return 206.835 - 1.015 * (len(words)/ nsentences) - 84.6 * (syllables / len(words))
+    return 206.835 - 1.015 * (max(1, len(words))/ nsentences) - 84.6 * (syllables / max(1, len(words)))
 
 def readibility_score(nsentences: int, words: List[str]):
     rsc = readibility(nsentences, words)

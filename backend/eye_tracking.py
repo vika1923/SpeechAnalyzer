@@ -1,9 +1,13 @@
+from types import NoneType
 import cv2
 import numpy as np
+from collections import defaultdict
+from typing import DefaultDict, List, Tuple
+
 from gaze_tracking import GazeTracking
 from my_logger import get_logger
+
 logger = get_logger(__name__)
-from typing import List, Tuple
 
 def extract_gaze_per_second(video_path) -> Tuple[List[float], List[Tuple[float, float]]]:
     """
@@ -18,11 +22,8 @@ def extract_gaze_per_second(video_path) -> Tuple[List[float], List[Tuple[float, 
 
     fps = cap.get(cv2.CAP_PROP_FPS)
 
-    times = []
-    gaze_points = []
-
-    current_second = 0
-    x_vals, y_vals = [], []
+    per_second_points: DefaultDict[int, List[Tuple[float, float]]] = defaultdict(list)
+    all_points: List[Tuple[float, float]] = []
 
     while True:
         ret, frame = cap.read()
@@ -30,51 +31,50 @@ def extract_gaze_per_second(video_path) -> Tuple[List[float], List[Tuple[float, 
             break
 
         frame_index = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-        current_time = frame_index / fps  # seconds
+        current_time = frame_index / fps if fps else 0.0  # seconds
 
         # Run gaze tracking on the frame
         gaze.refresh(frame)
-        x, y = gaze.horizontal_ratio(), gaze.vertical_ratio()
+        x, y = None, None
         if gaze.eye_left is None or gaze.eye_right is None:
             logger.debug("Gaze not detected")
         else:
             if gaze.pupils_located is False:
                 logger.debug("Pupils not detected")
             else:
-                pupil_left = gaze.eye_left.pupil.x / (gaze.eye_left.center[0] * 2 - 10)
-                pupil_right = gaze.eye_right.pupil.x / (gaze.eye_right.center[0] * 2 - 10)
-                x = (pupil_left + pupil_right) / 2
-
+                x, y = gaze.horizontal_ratio(), gaze.vertical_ratio()
 
         # Collect valid gaze points
         if x is not None and y is not None:
-            logger.info(gaze.horizontal_ratio(), gaze.vertical_ratio())
-            x_vals.append(x)
-            y_vals.append(y)
-
-        # At each new second boundary, store average and reset
-        if int(current_time) > current_second:
-            if x_vals and y_vals:
-                avg_x = float(np.mean(x_vals))
-                avg_y = float(np.mean(y_vals))
-            else:
-                avg_x, avg_y = None, None
-
-            if avg_x is not None and avg_y is not None:
-                times.append(current_second)
-                gaze_points.append((avg_x, avg_y))
-
-            current_second = int(current_time)
-            x_vals, y_vals = [], []
-
-    # Handle last partial second
-    if x_vals and y_vals:
-        avg_x = float(np.mean(x_vals))
-        avg_y = float(np.mean(y_vals))
-        times.append(current_second)
-        gaze_points.append((avg_x, avg_y))
+            second_index = int(current_time)
+            per_second_points[second_index].append((float(x), float(y)))
+            all_points.append((float(x), float(y)))
 
     cap.release()
+
+    if not all_points:
+        return [], []
+
+    mean_x = float(np.mean([pt[0] for pt in all_points]))
+    mean_y = float(np.mean([pt[1] for pt in all_points]))
+
+    def distance_squared(point: Tuple[float, float]) -> float:
+        dx = point[0] - mean_x
+        dy = point[1] - mean_y
+        return dx * dx + dy * dy
+
+    times: List[float] = []
+    gaze_points: List[Tuple[float, float]] = []
+
+    for second in sorted(per_second_points.keys()):
+        points = per_second_points[second]
+        if not points:
+            continue
+        outlier = max(points, key=distance_squared)
+        centered_point = (float(outlier[0]) - 0.55, float(outlier[1]) - 0.75)
+        times.append(float(second))
+        gaze_points.append(centered_point)
+
     return times, gaze_points
 
 
