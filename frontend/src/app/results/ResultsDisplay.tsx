@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import {
   PieChart, Pie, Cell,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -221,6 +222,17 @@ interface AnalysisResults {
 }
 
 export default function ResultsDisplay({ results }: { results: AnalysisResults }) {
+  const [userInfo, setUserInfo] = useState<{ name: string; age: number; organization: string; role: string } | null>(null);
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('userInfo');
+      if (stored) {
+        setUserInfo(JSON.parse(stored));
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
   // Prepare gaze arrays with fallback to older field names
   const gazeX: number[] = (results.gaze_x ?? results.gaze_angle_x ?? []) as number[];
   const gazeY: number[] = (results.gaze_y ?? results.gaze_angle_y ?? []) as number[];
@@ -324,6 +336,26 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       transition={{ duration: 0.8 }}
       className="space-y-6 reveal w-full"
     >
+      {userInfo && (
+        <div className="w-full text-center">
+          <div className="p-2">
+            <div className="flex flex-col items-center gap-1">
+              <div className="text-[#80003a] font-display text-2xl font-semibold">
+                {userInfo.name}
+              </div>
+              <div className="text-[#80003a] font-display text-xl font-semibold">
+                Age: {userInfo.age}
+              </div>
+              <div className="text-[#80003a] font-display text-xl font-semibold">
+                {userInfo.organization}
+              </div>
+              <div className="text-[#80003a] font-display text-xl font-semibold capitalize">
+                {userInfo.role}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className='flex items-center justify-center pt-2'>
         <h1 className='text-xl text-[#80003a]'>Verbal Communication</h1>
       </div>

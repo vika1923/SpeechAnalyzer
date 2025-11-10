@@ -48,6 +48,18 @@ export default function App() {
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  // User info form state
+  const [userName, setUserName] = useState("");
+  const [age, setAge] = useState<number | "">("");
+  const [organization, setOrganization] = useState("");
+  const [role, setRole] = useState<"student" | "teacher" | "working professional" | "guest" | "">("");
+  const [formTouched, setFormTouched] = useState(false);
+  // Video selection/recording state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recordedChunksRef = useRef<BlobPart[]>([]);
 
   // Poll job status
   const pollJobStatus = async (jobId: string) => {
@@ -97,6 +109,8 @@ export default function App() {
           setProcessing(false);
           setProgress(100);
           if (jobData.results) {
+            // Cleanup any locally stored recorded video once analysis completes
+            try { localStorage.removeItem('recordedVideo'); } catch {}
             sessionStorage.setItem('analysisResults', JSON.stringify(jobData.results));
             router.push('/results');
           } else {
@@ -188,18 +202,10 @@ export default function App() {
   };
 
   /**
-   * Handles the video file upload process.
-   * @param {React.FormEvent | React.ChangeEvent} e - The form or change event.
+   * Actually uploads a File to backend and starts polling
    */
-  const handleUpload = async (e: React.FormEvent | React.ChangeEvent) => {
-    e.preventDefault();
+  const uploadFileForAnalysis = async (file: File) => {
     setError("");
-    const file = fileInputRef.current?.files?.[0];
-    if (!file) {
-      setError("Please select a video file.");
-      return;
-    }
-    
     setUploading(true);
     setProgress(0);
     
@@ -259,6 +265,130 @@ export default function App() {
     if (fileInputRef.current && !uploading && !processing) {
       fileInputRef.current.click();
     }
+  };
+  /**
+   * Handle file selection without auto-starting analysis
+   */
+  const handleFileSelected: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    setError("");
+    const file = e.target.files?.[0] ?? null;
+    setSelectedFile(file);
+    // If user selects a file, clear any recorded video stored earlier
+    try { localStorage.removeItem('recordedVideo'); } catch {}
+  };
+  /**
+   * Start recording using MediaRecorder
+   */
+  const startRecording = async () => {
+    setError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      mediaStreamRef.current = stream;
+      recordedChunksRef.current = [];
+      const mr = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8,opus' });
+      mediaRecorderRef.current = mr;
+      mr.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
+        }
+      };
+      mr.onstop = async () => {
+        const blob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        // Save to localStorage as base64 (can be large; acceptable for short recordings)
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          try {
+            const base64 = reader.result as string; // data:...;base64,xxxx
+            localStorage.setItem('recordedVideo', base64);
+            // Also reflect selection in UI by creating a File-like object for display/upload later
+            const fileLike = new File([blob], `recording_${Date.now()}.webm`, { type: 'video/webm' });
+            setSelectedFile(fileLike);
+          } catch (e) {
+            console.error('Failed saving recording locally', e);
+            setError("Couldn't save the recording locally.");
+          }
+        };
+        reader.readAsDataURL(blob);
+        // Stop tracks
+        mediaStreamRef.current?.getTracks().forEach(t => t.stop());
+        mediaStreamRef.current = null;
+        setRecording(false);
+      };
+      mr.start();
+      setRecording(true);
+    } catch (e: any) {
+      console.error('Recording error', e);
+      setError(e?.message || "Failed to access camera/microphone.");
+    }
+  };
+  /**
+   * Stop an ongoing recording
+   */
+  const stopRecording = () => {
+    try {
+      mediaRecorderRef.current?.stop();
+    } catch (e) {
+      console.error(e);
+      setRecording(false);
+    }
+  };
+  /**
+   * Validate form inputs
+   */
+  const isFormValid = () => {
+    return (
+      userName.trim().length > 0 &&
+      organization.trim().length > 0 &&
+      role !== "" &&
+      age !== "" &&
+      Number.isFinite(Number(age)) &&
+      Number(age) > 0
+    );
+  };
+  /**
+   * Persist user info for results page
+   */
+  const persistUserInfo = () => {
+    const info = {
+      name: userName.trim(),
+      age: Number(age),
+      organization: organization.trim(),
+      role,
+    };
+    sessionStorage.setItem('userInfo', JSON.stringify(info));
+  };
+  /**
+   * Handler to begin analysis after user clicks button
+   */
+  const startAnalysis = async () => {
+    setFormTouched(true);
+    setError("");
+    if (!isFormValid()) {
+      setError("Please complete all fields in the form.");
+      return;
+    }
+    // Ensure a video source is present either as selected file or in localStorage
+    let fileToAnalyze: File | null = selectedFile;
+    if (!fileToAnalyze) {
+      // Try reconstructing from localStorage
+      try {
+        const base64 = localStorage.getItem('recordedVideo');
+        if (base64) {
+          const res = await fetch(base64);
+          const blob = await res.blob();
+          fileToAnalyze = new File([blob], `recording_${Date.now()}.webm`, { type: blob.type || 'video/webm' });
+        }
+      } catch (e) {
+        console.error('Failed to reconstruct recorded video', e);
+      }
+    }
+    if (!fileToAnalyze) {
+      setError("Please upload or record a video first.");
+      return;
+    }
+    // Save user info for results page
+    persistUserInfo();
+    await uploadFileForAnalysis(fileToAnalyze);
   };
 
   // Effect to handle 'reveal-scale' and 'reveal' animations at runtime using IntersectionObserver.
@@ -323,6 +453,7 @@ export default function App() {
 
       <main className="relative container mx-auto px-4 py-8 flex-grow flex flex-col items-center justify-center">
         <div className="w-full md:w-1/2 lg:w-1/2 mx-auto">
+          
           {/* Hero Section */}
           <motion.h1
             initial={{ opacity: 0, y: -30 }}
@@ -341,6 +472,67 @@ export default function App() {
             Get instant, AI-powered feedback on your spoken English. Upload a video and unlock your speaking potential.
           </motion.p>
 
+          {/* User Info Form */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="border-card border-indigo-700 bg-white p-6 mb-8 shadow-2xl rounded-xl reveal-scale w-full"
+          >
+            <h2 className="font-display text-2xl text-indigo-700 text-center mb-4">Tell us about you</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  className={`w-full rounded-md border px-3 py-2 outline-none ${formTouched && !userName.trim() ? 'border-red-400' : 'border-gray-300'}`}
+                  placeholder="Enter your name"
+                  disabled={isProcessingState}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={age}
+                  onChange={(e) => setAge(e.target.value === "" ? "" : Number(e.target.value))}
+                  className={`w-full rounded-md border px-3 py-2 outline-none ${formTouched && (age === "" || Number(age) <= 0) ? 'border-red-400' : 'border-gray-300'}`}
+                  placeholder="Enter your age"
+                  disabled={isProcessingState}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
+                <input
+                  type="text"
+                  value={organization}
+                  onChange={(e) => setOrganization(e.target.value)}
+                  className={`w-full rounded-md border px-3 py-2 outline-none ${formTouched && !organization.trim() ? 'border-red-400' : 'border-gray-300'}`}
+                  placeholder="Enter your organization"
+                  disabled={isProcessingState}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as any)}
+                  className={`w-full rounded-md border px-3 py-2 outline-none bg-white ${formTouched && role === "" ? 'border-red-400' : 'border-gray-300'}`}
+                  disabled={isProcessingState}
+                >
+                  <option value="" disabled>Select your role</option>
+                  <option value="student">Student</option>
+                  <option value="teacher">Teacher</option>
+                  <option value="working professional">Working Professional</option>
+                  <option value="guest">Guest</option>
+                </select>
+              </div>
+            </div>
+          </motion.div>
+
           {/* Upload Section */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -349,12 +541,12 @@ export default function App() {
             className="border-card border-indigo-700 bg-white p-8 mb-8 shadow-2xl rounded-xl reveal-scale w-full"
           >
             <h2 className="font-display text-3xl text-indigo-700 text-center mb-6"></h2>
-            <form onSubmit={handleUpload} className="flex flex-col md:flex-row items-center justify-center md:space-x-8 space-y-6 md:space-y-0">
+            <div className="flex flex-col md:flex-row items-center justify-center md:space-x-8 space-y-6 md:space-y-0">
               <input
                 type="file"
                 accept="video/*"
                 ref={fileInputRef}
-                onChange={handleUpload}
+                onChange={handleFileSelected}
                 className="hidden"
                 disabled={isProcessingState}
               />
@@ -374,28 +566,38 @@ export default function App() {
                   </div>
                 )}
 
+                {/* Selected file / recording status */}
+                {selectedFile && (
+                  <div className="text-sm text-gray-600">
+                    Selected: <span className="font-medium">{selectedFile.name}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Controls */}
+              <div className="flex flex-col items-center space-y-3">
                 <motion.button
-                  type="submit"
-                  className="w-full max-w-xs bg-indigo-700 text-white py-3 px-6 rounded-full font-semibold hover:bg-indigo-800 disabled:opacity-50 transition-all shadow-md"
+                  type="button"
+                  className={`px-5 py-3 rounded-md text-white font-semibold shadow ${recording ? 'bg-red-600 hover:bg-red-700' : 'bg-indigo-600 hover:bg-indigo-700'} disabled:opacity-50`}
+                  onClick={recording ? stopRecording : startRecording}
                   disabled={isProcessingState}
                   whileHover={{ scale: isProcessingState ? 1 : 1.02 }}
                   whileTap={{ scale: isProcessingState ? 1 : 0.98 }}
                 >
-                  {uploading ? "Uploading..." : processing ? `Processing... ${progress}%` : "Analyze Speech"}
+                  {recording ? 'Stop recording' : 'Record live'}
+                </motion.button>
+                <motion.button
+                  type="button"
+                  className="px-5 py-3 rounded-md bg-gray-800 text-white font-semibold shadow hover:bg-gray-900 disabled:opacity-50"
+                  onClick={handleMicrophoneClick}
+                  disabled={isProcessingState}
+                  whileHover={{ scale: isProcessingState ? 1 : 1.02 }}
+                  whileTap={{ scale: isProcessingState ? 1 : 0.98 }}
+                >
+                  Upload from device
                 </motion.button>
               </div>
-
-              <motion.div
-                className={`w-32 h-32 md:w-40 md:h-40 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 ease-in-out
-                          ${isProcessingState ? 'bg-gray-200 animate-pulse-slow' : 'bg-indigo-500 hover:bg-indigo-600 shadow-lg'}`}
-                onClick={handleMicrophoneClick}
-                whileHover={{ scale: isProcessingState ? 1 : 1.05 }}
-                whileTap={{ scale: isProcessingState ? 1 : 0.95 }}
-                title={isProcessingState ? (uploading ? "Uploading..." : "Processing...") : "Click to upload video"}
-              >
-                <FaMicrophone className={`text-white text-5xl md:text-6xl ${isProcessingState ? 'animate-bounce' : ''}`} />
-              </motion.div>
-            </form>
+            </div>
 
             <AnimatePresence>
               {error && (
@@ -410,6 +612,19 @@ export default function App() {
               )}
             </AnimatePresence>
           </motion.div>
+          {/* Start Analyzing Button */}
+          <div className="w-full flex items-center justify-center">
+            <motion.button
+              type="button"
+              className="inline-block bg-indigo-700 text-white px-8 py-4 rounded-full hover:bg-indigo-800 transition-colors duration-300 ease-in-out text-lg font-semibold shadow-md disabled:opacity-50"
+              onClick={startAnalysis}
+              disabled={isProcessingState}
+              whileHover={{ scale: isProcessingState ? 1 : 1.02 }}
+              whileTap={{ scale: isProcessingState ? 1 : 0.98 }}
+            >
+              Start analyzing
+            </motion.button>
+          </div>
         </div>
       </main>
 
