@@ -8,10 +8,11 @@ def separate_to_sentences(text):
     Returns:
         list: A list of sentences.
     """
+    sentence_enders = [".", "!", "?"]
     sentences = []
     current_sentence = ""
     for char in text:
-        if char == ".":
+        if char in sentence_enders:
             sentences.append(current_sentence)
             current_sentence = ""
         else:
@@ -66,7 +67,7 @@ def count_paragraphs(text):
         int: The number of paragraphs in the text.
     """
     paragraphs = separate_to_paragraphs(text)
-    return len(paragraphs)
+    return min(len(paragraphs), count_sentences(text))
 
 def count_letters(text):
     """
