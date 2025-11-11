@@ -15,16 +15,27 @@ export default function About() {
           <div className="flex justify-between items-center">
             <div>
               <p className="subheadline text-blackbase text-lg">
-                  Developed by: Bahodir Madatov, Viktoriya Kim, Almaz Umbetov
+                A Joint Project by CommLabAUT and AI2 Lab
               </p>
               <p className="subheadline text-blackbase text-lg">
-                  Concept and Academic Expertise: Parveen Kumar
+                <b>
+                    Development Team
+                </b>
               </p>
               <p className="subheadline text-blackbase text-lg">
-                  Outreach Support: Asilbegim Nasirova, Shakrizoda Oripova
+                Bahodir Madatov, Viktoriya Kim, Almaz Umbetov
               </p>
               <p className="subheadline text-blackbase text-lg">
-                  Technical Mentoring: Dr Rajan Tripathi
+                Students of BS Software Engineering (20242028)
+              </p>
+              <p className="subheadline text-blackbase text-lg">
+                Concept and Academic Expertise: Parveen Kumar
+              </p>
+              <p className="subheadline text-blackbase text-lg">
+                Outreach Support: Asilbegim Nasirova
+              </p>
+              <p className="subheadline text-blackbase text-lg">
+                Resource Assistance: AI2 Lab
               </p>
             </div>
             <div className="ml-8">

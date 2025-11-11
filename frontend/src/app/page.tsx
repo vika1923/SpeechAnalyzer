@@ -439,7 +439,7 @@ export default function App() {
 
       <header className="relative w-full max-w-6xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
         <a href="#" className="text-[#80003a] text-2xl font-bold font-display">
-          Speech Analyzer
+          CommAI by CommLabAUT
         </a>
         <nav className="space-x-4">
           <a href="/about" className="text-[#80003a] hover:text[#80003a] transition-colors">
@@ -469,7 +469,7 @@ export default function App() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl md:text-2xl text-[#80003a] text-center max-w-3xl mb-12"
           >
-            Get instant, AI-powered feedback on your spoken English. Upload a video and unlock your speaking potential.
+            Get instant, AI-powered feedback on your Public Speaking and unlock your speaking potential!
           </motion.p>
 
           {/* User Info Form */}
@@ -629,7 +629,7 @@ export default function App() {
       </main>
 
       <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-[#80003a] text-sm">
-        &copy; {new Date().getFullYear()} Speech Analyzer. All rights reserved.
+      {new Date().getFullYear()} A Skill Enhancement Project by CommLabAUT
       </footer>
     </div>
   );

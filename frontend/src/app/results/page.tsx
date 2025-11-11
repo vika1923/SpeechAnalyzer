@@ -90,7 +90,7 @@ export default function Results() {
           {results ? (
             <>
               <div id="results-capture">
-                <h1 className="text-4xl font-bold mb-6 text-[#80003a] text-center">Analysis Results</h1>
+                <h1 className="text-4xl font-bold mb-6 text-[#80003a] text-center">CommAI Analysis</h1>
                 <ResultsDisplay results={results} />
               </div>
               <div className="text-center mt-8 flex items-center justify-center gap-4">
@@ -252,7 +252,7 @@ export default function Results() {
       </main>
 
       <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-[#80003a] text-sm">
-        &copy; {new Date().getFullYear()} CommAI. All rights reserved.
+        {new Date().getFullYear()} For Expert Interpretation and Advice, write to CommLabAUT@aut-edu.uz with the Report PDF.
       </footer>
     </div>
   );

@@ -554,7 +554,7 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
               {/* Hand Activity */}
               {results.hand_eye_activity_results.hand_activity && (
                 <div>
-                  <h4 className="font-display text-lg text-red-700 mb-2">Hand Activity:</h4>
+                  <h4 className="font-display text-lg text-red-700 mb-2">Gestures(Hand Activity):</h4>
                   {/* <h3 className="font-display text-lg text-teal-700 mb-2">Rate of Speech (Words/Min)</h3> */}
                   <div className="space-y-1 text-gray-700">
                     <p>Left Hand Avg: {results.hand_eye_activity_results.hand_activity.left_hand_avg_activity}%</p>
