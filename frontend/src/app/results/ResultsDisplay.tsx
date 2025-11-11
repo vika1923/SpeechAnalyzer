@@ -61,6 +61,7 @@ function StickmanVisualization({ handPositionData }: { handPositionData: string 
   };
 
   const percentages = parseHandPositionData(handPositionData);
+  const formatPercentage = (value?: number) => `${(value ?? 0).toFixed(1)}%`;
   
   // Get alpha values (percentages as decimals, multiplied by 1.5, clamped between 0.1 and 0.8 for visibility)
   const getAlpha = (percentage: number) => {
@@ -69,7 +70,7 @@ function StickmanVisualization({ handPositionData }: { handPositionData: string 
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative inline-block">
+      <div className="relative inline-block group">
         {/* Stickman base image */}
         <img 
           src="/stickman.png" 
@@ -80,102 +81,126 @@ function StickmanVisualization({ handPositionData }: { handPositionData: string 
         {/* Overlay divs for 8 regions - positioned to match image exactly */}
         {/* Upper row */}
         <div 
-          className="absolute pointer-events-none"
-          style={{ 
+          className="absolute flex items-center justify-center text-white text-xs font-semibold group"
+          style={{
             top: 0,
             left: 0,
             width: '50%',
             height: '24%',
             backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.uul || 0)})` 
           }}
-          title={`Upper Upper Left: ${percentages.uul || 0}%`}
-        />
+        >
+          <span className="px-2 py-1 rounded bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {formatPercentage(percentages.uul)}
+          </span>
+        </div>
         <div 
-          className="absolute pointer-events-none"
-          style={{ 
+          className="absolute flex items-center justify-center text-white text-xs font-semibold group"
+          style={{
             top: 0,
             right: 0,
             width: '50%',
             height: '24%',
             backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.uur || 0)})` 
           }}
-          title={`Upper Upper Right: ${percentages.uur || 0}%`}
-        />
+        >
+          <span className="px-2 py-1 rounded bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {formatPercentage(percentages.uur)}
+          </span>
+        </div>
         
         {/* Upper middle row */}
         <div 
-          className="absolute pointer-events-none"
-          style={{ 
+          className="absolute flex items-center justify-center text-white text-xs font-semibold group"
+          style={{
             top: '24%',
             left: 0,
             width: '50%',
             height: '18%',
             backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.ul || 0)})` 
           }}
-          title={`Upper Left: ${percentages.ul || 0}%`}
-        />
+        >
+          <span className="px-2 py-1 rounded bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {formatPercentage(percentages.ul)}
+          </span>
+        </div>
         <div 
-          className="absolute pointer-events-none"
-          style={{ 
+          className="absolute flex items-center justify-center text-white text-xs font-semibold group"
+          style={{
             top: '24%',
             right: 0,
             width: '50%',
             height: '18%',
             backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.ur || 0)})` 
           }}
-          title={`Upper Right: ${percentages.ur || 0}%`}
-        />
+        >
+          <span className="px-2 py-1 rounded bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {formatPercentage(percentages.ur)}
+          </span>
+        </div>
         
         {/* Lower middle row */}
         <div 
-          className="absolute pointer-events-none"
-          style={{ 
+          className="absolute flex items-center justify-center text-white text-xs font-semibold group"
+          style={{
             top: '42%',
             left: 0,
             width: '50%',
             height: '15%',
             backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.dl || 0)})` 
           }}
-          title={`Down Left: ${percentages.dl || 0}%`}
-        />
+        >
+          <span className="px-2 py-1 rounded bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {formatPercentage(percentages.dl)}
+          </span>
+        </div>
         <div 
-          className="absolute pointer-events-none"
-          style={{ 
+          className="absolute flex items-center justify-center text-white text-xs font-semibold group"
+          style={{
             top: '42%',
             right: 0,
             width: '50%',
             height: '15%',
             backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.dr || 0)})` 
           }}
-          title={`Down Right: ${percentages.dr || 0}%`}
-        />
+        >
+          <span className="px-2 py-1 rounded bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {formatPercentage(percentages.dr)}
+          </span>
+        </div>
         
         {/* Bottom row */}
         <div 
-          className="absolute pointer-events-none"
-          style={{ 
+          className="absolute flex items-center justify-center text-white text-xs font-semibold group"
+          style={{
             top: '57%',
             left: 0,
             width: '50%',
             height: '43%',
             backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.ddl || 0)})` 
           }}
-          title={`Down Down Left: ${percentages.ddl || 0}%`}
-        />
+        >
+          <span className="px-2 py-1 rounded bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {formatPercentage(percentages.ddl)}
+          </span>
+        </div>
         <div 
-          className="absolute pointer-events-none"
-          style={{ 
+          className="absolute flex items-center justify-center text-white text-xs font-semibold group"
+          style={{
             top: '57%',
             right: 0,
             width: '50%',
             height: '43%',
             backgroundColor: `rgba(59, 130, 246, ${getAlpha(percentages.ddr || 0)})` 
           }}
-          title={`Down Down Right: ${percentages.ddr || 0}%`}
-        />
+        >
+          <span className="px-2 py-1 rounded bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            {formatPercentage(percentages.ddr)}
+          </span>
+        </div>
       </div>
       
-      {/* Legend */}
+      {/* 
       <div className="mt-4 text-xs text-gray-600">
         <div className="grid grid-cols-2 gap-2">
           <div>UUL: {(percentages.uul || 0).toFixed(1)}%</div>
@@ -187,7 +212,7 @@ function StickmanVisualization({ handPositionData }: { handPositionData: string 
           <div>DDL: {(percentages.ddl || 0).toFixed(1)}%</div>
           <div>DDR: {(percentages.ddr || 0).toFixed(1)}%</div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
@@ -223,6 +248,7 @@ interface AnalysisResults {
 
 export default function ResultsDisplay({ results }: { results: AnalysisResults }) {
   const [userInfo, setUserInfo] = useState<{ name: string; age: number; organization: string; role: string } | null>(null);
+  const [copyAlertVisible, setCopyAlertVisible] = useState(false);
   useEffect(() => {
     try {
       const stored = sessionStorage.getItem('userInfo');
@@ -252,6 +278,58 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       rangeX: MAX_ABS,
       rangeY: MAX_ABS,
     };
+  })();
+
+  const volumeRawData = (() => {
+    const entries = Object.entries(results.volume_points ?? {});
+    return entries.map(([time, volume], index) => {
+      const numericTime = Number(time);
+      const timeNumber = Number.isFinite(numericTime) ? numericTime : index;
+      return {
+        timeNumber,
+        originalTime: timeNumber,
+        Volume: volume,
+      };
+    });
+  })();
+
+  const volumeSpacing = (() => {
+    if (volumeRawData.length < 2) {
+      return 1;
+    }
+    const sortedTimes = [...volumeRawData.map((point) => point.timeNumber)].sort((a, b) => a - b);
+    let minDiff = Infinity;
+    for (let i = 1; i < sortedTimes.length; i += 1) {
+      const diff = sortedTimes[i] - sortedTimes[i - 1];
+      if (diff > 0) {
+        minDiff = Math.min(minDiff, diff);
+      }
+    }
+    if (!Number.isFinite(minDiff) || minDiff <= 0) {
+      return 1;
+    }
+    return minDiff;
+  })();
+
+  const volumeBarOffset = volumeSpacing / 2;
+
+  const volumeChartData = volumeRawData.map((point) => ({
+    ...point,
+    timePosition: point.timeNumber + volumeBarOffset,
+  }));
+
+  const volumeTicks = (() => {
+    if (volumeRawData.length === 0) {
+      return [];
+    }
+    const tickInterval = 20;
+    const maxTime = volumeRawData.reduce((max, point) => Math.max(max, point.timeNumber), 0);
+    const upperTick = Math.max(tickInterval, Math.ceil(maxTime / tickInterval) * tickInterval);
+    const ticks: number[] = [];
+    for (let t = 0; t <= upperTick; t += tickInterval) {
+      ticks.push(t);
+    }
+    return ticks;
   })();
 
   const GazeScatterPlot = () => {
@@ -591,14 +669,29 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
         >
             <h3 className="font-display text-lg text-orange-700 mb-2">Volume Levels Analysis</h3>
             <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={Object.entries(results.volume_points).map(([time, volume]) => ({
-                    time: time,
-                    Volume: volume // Display raw decibels
-                }))}>
+                <BarChart data={volumeChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#ffe0b2" />
-                    <XAxis dataKey="time" label={{ value: "Time Segment", position: "insideBottom", offset: -5 }} hide={true} /> {/* Hide X-axis labels if too many */}
+                    <XAxis
+                        dataKey="timePosition"
+                        type="number"
+                        domain={[
+                          volumeTicks[0] ?? 0,
+                          volumeTicks.length > 0
+                            ? volumeTicks[volumeTicks.length - 1] + volumeBarOffset
+                            : 'auto',
+                        ]}
+                        ticks={volumeTicks}
+                        tickFormatter={(value: number) => `${value}s`}
+                        label={{ value: "Time (s)", position: "insideBottom", offset: -5 }}
+                        allowDecimals={false}
+                    />
                     <YAxis label={{ value: "Volume (db)", angle: -90, position: "insideLeft" }} />
-                    <Tooltip />
+                    <Tooltip
+                        labelFormatter={(label: number, payload: readonly { payload?: { originalTime?: number } }[]) => {
+                          const originalTime = payload?.[0]?.payload?.originalTime ?? label - volumeBarOffset;
+                          return `${Math.round(originalTime)}s`;
+                        }}
+                    />
                     <Legend />
                     <Bar dataKey="Volume" fill="#fb923c" />
                 </BarChart>
@@ -664,13 +757,33 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="border-card border-blue-500 bg-blue-50 p-6 shadow-xl rounded-xl"
+              className="border-card border-blue-500 bg-blue-50 p-6 shadow-xl rounded-xl flex flex-col gap-4 relative"
             >
               <h3 className="font-display text-xl text-blue-700 mb-4">Corrected Transcript</h3>
               <p
                 className="font-body text-gray-800 leading-relaxed grammar-highlight"
                 dangerouslySetInnerHTML={{ __html: results.corrected_transcript.replace(/<c>/g, '<span class="bg-yellow-300 px-1 rounded font-semibold underline decoration-wavy decoration-orange-500">').replace(/<\/c>/g, '</span>') }}
               />
+              {copyAlertVisible && (
+                <div className="absolute bottom-16 right-6 bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded shadow-lg">
+                  Copied!
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(results.corrected_transcript);
+                    setCopyAlertVisible(true);
+                    setTimeout(() => setCopyAlertVisible(false), 1000);
+                  } catch (error) {
+                    console.error("Failed to copy transcript", error);
+                  }
+                }}
+                className="self-end px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors"
+              >
+                Copy Transcript
+              </button>
               <style jsx global>{`
                 .grammar-highlight span {
                   cursor: help;
@@ -703,12 +816,6 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
       </div>
 
       
-
-      
-
-      
-
-      {/* OpenFace section removed - not needed */}
     </motion.div>
   );
 } 
