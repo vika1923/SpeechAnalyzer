@@ -11,6 +11,8 @@ def separate_to_sentences(text):
     sentence_enders = [".", "!", "?"]
     sentences = []
     current_sentence = ""
+    if text is None:
+        return []
     for char in text:
         if char in sentence_enders:
             sentences.append(current_sentence)
@@ -31,6 +33,8 @@ def separate_to_paragraphs(text):
     Returns:
         list: A list of paragraphs.
     """
+    if text is None:
+        return []
     paragraphs = []
     current_paragraph = ""
     for char in text:
