@@ -45,11 +45,11 @@
 
   body {
     @apply bg-cream text-blackbase antialiased;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Lora', serif;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Migra', serif;
+    font-family: 'Lora', serif;
   }
 }
 

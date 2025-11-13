@@ -54,7 +54,7 @@ export default function Results() {
   }, []); // Empty dependency array ensures this runs once on mount
 
   return (
-    <div id="results-print-root" className=" relative overflow-hidden min-h-screen w-full bg-[#dbc7fe] flex flex-col items-center p-4 sm:p-8 font-inter">
+    <div id="results-print-root" className=" relative overflow-hidden min-h-screen w-full bg-[#dbc7fe] flex flex-col items-center p-4 sm:p-8">
       <div className="absolute top-1/4 left-0 -translate-y-1/2 -translate-x-1/2 
               w-64 h-64 bg-[#80003a] rotate-45">
       </div>

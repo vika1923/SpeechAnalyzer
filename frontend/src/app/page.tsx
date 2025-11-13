@@ -425,10 +425,10 @@ export default function App() {
   const isProcessingState = uploading || processing;
   const statusMessage = uploading ? "Uploading your video..." : 
                        processing ? `Processing your video... ${progress}%` : 
-                       "Click the microphone to upload your video";
+                       `Recommnended Duration of Video: 1-2 Minutes\nFile Size: No Limits but prefer less than 500MB upload for fast processing.\nPrescribed File Format: Mp4, MOV.`;
 
   return (
-    <div className="relative overflow-hidden min-h-screen w-full bg-[#dbc7fe] flex flex-col items-center justify-center p-4 sm:p-8 font-inter">
+    <div className="relative overflow-hidden min-h-screen w-full bg-[#dbc7fe] flex flex-col items-center justify-center p-4 sm:p-8">
       <div className="absolute top-1/2 left-0 -translate-y-1/2 -translate-x-1/2 
               w-64 h-64 bg-[#80003a] rotate-45">
       </div>
@@ -552,7 +552,7 @@ export default function App() {
               />
 
               <div className="flex flex-col items-center space-y-4">
-                <p className="text-gray-700 text-lg font-medium text-center">
+                <p className="text-gray-700 text-lg font-medium text-center whitespace-pre-line">
                   {statusMessage}
                 </p>
 

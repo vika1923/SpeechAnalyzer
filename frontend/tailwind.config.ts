@@ -8,6 +8,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        display: ['Lora', 'serif'],
+        body: ['Lora', 'serif'],
+      },
       colors: {
         deepgreen: '#003432',
         burgundy: '#80003A',

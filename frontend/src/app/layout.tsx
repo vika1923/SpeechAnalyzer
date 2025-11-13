@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Lora } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ 
+const lora = Lora({ 
   subsets: ["latin"],
   display: "swap",
 });
@@ -18,7 +18,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={lora.className}>
       <body className="min-h-screen bg-cream text-blackbase antialiased">
         {children}
       </body>
