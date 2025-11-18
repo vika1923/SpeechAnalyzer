@@ -628,8 +628,13 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-[#80003a] text-sm">
-      {new Date().getFullYear()} A Skill Enhancement Project by CommLabAUT
+      <footer className="relative w-full py-8 max-w-6xl mx-auto">
+              <div className="text-center text-[#80003a] text-sm">
+                {new Date().getFullYear()} A Skill Enhancement Project by CommLabAUT
+              </div>
+              <div className="text-center text-[rgb(128,0,58)] text-sm">
+                Disclaimer: This is an AI-enabled Tool and Reports must be further corelated by an expert.
+              </div>
       </footer>
     </div>
   );

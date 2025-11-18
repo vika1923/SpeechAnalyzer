@@ -251,8 +251,13 @@ export default function Results() {
         </div>
       </main>
 
-      <footer className="relative w-full max-w-6xl mx-auto text-center py-8 text-[#80003a] text-sm">
-        {new Date().getFullYear()} For Expert Interpretation and Advice, write to CommLabAUT@aut-edu.uz with the Report PDF.
+      <footer className="relative w-full py-8 max-w-6xl mx-auto">
+              <div className="text-center text-[#80003a] text-sm">
+              {new Date().getFullYear()} For Expert Interpretation and Advice, write to CommLabAUT@aut-edu.uz with the Report PDF.
+              </div>
+              <div className="text-center text-[rgb(128,0,58)] text-sm">
+                Disclaimer: This is an AI-enabled Tool and Reports must be further corelated by an expert.
+              </div>
       </footer>
     </div>
   );

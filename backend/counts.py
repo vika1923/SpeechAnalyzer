@@ -83,6 +83,8 @@ def count_letters(text):
     Returns:
         int: The number of letters in the text.
     """
+    if text is None:
+        return 0
     count = 0
     for char in text:
         if char.isalpha():

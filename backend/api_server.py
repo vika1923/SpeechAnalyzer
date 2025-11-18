@@ -157,14 +157,15 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         full_text = grammar_tone.fix_punctuation_and_paragraphs(full_unpunctuated_text)
         logger.info(f"FULL TEXT: {full_text}")
 
+        # Check if punctuation fixing failed before proceeding
+        if full_text is None:
+            jobs[job_id]["status"] = "failed"
+            jobs[job_id]["error"] = "Failed to add punctuation to text. Please check your OpenAI API key."
+            return
+
         sentences_count = counts.count_sentences(full_text)
         letters_count = counts.count_letters(full_text)
         paragraphs_count = counts.count_paragraphs(full_text)
-
-        if full_text is None:
-            jobs[job_id]["status"] = "failed"
-            jobs[job_id]["error"] = "Failed to add punctuation to text."
-            return
 
         # Apply floss analysis to identify problematic speech patterns
         logger.info("Running floss analysis")
