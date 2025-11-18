@@ -230,6 +230,7 @@ interface AnalysisResults {
   parts_of_speech: Record<string, number>;
   grammar_mistakes: [[number, number], string, string][];
   custom_tone_results: [number, string, string][];
+  extra_tone_results: [number, string, string][];
   hand_position_results: string;
   gaze_x?: number[];
   gaze_y?: number[];
@@ -510,6 +511,23 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
                 </li>
               ))}
             </ul>
+            
+            {/* Extra Tone Results */}
+            {results.extra_tone_results && results.extra_tone_results.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-red-300">
+                <h4 className="font-display text-md text-red-600 mb-2">Other detected tones</h4>
+                <ul className="space-y-2">
+                  {results.extra_tone_results.map(([score, label, emoji], idx) => (
+                    <li key={idx} className="flex items-center space-x-2">
+                      <span className="font-bold text-gray-500 mr-2">{idx + 1}.</span>
+                      <span className="text-2xl">{emoji}</span>
+                      <span className="font-medium text-gray-800">{label}</span>
+                      {/* <span className="ml-auto font-semibold text-red-600">{(score * 100).toFixed(1)}%</span> */}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </motion.div>
         {/* )} */}
 

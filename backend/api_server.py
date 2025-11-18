@@ -126,6 +126,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # Update job status to processing
         jobs[job_id]["status"] = "processing"
         jobs[job_id]["progress"] = 10
+        jobs[job_id]["current_task"] = "Converting video to audio"
         
         # Convert video to WAV audio
         logger.info("Converting video to audio")
@@ -137,12 +138,14 @@ def process_video_analysis_sync(job_id: str, file_path: str):
             return
         
         jobs[job_id]["progress"] = 20
+        jobs[job_id]["current_task"] = "Transcribing speech to text"
 
         # Transcribe speech to words with timestamps
         logger.info("Transcribing")
         timestamped_transcript_by_words = speech_to_text.speech_to_words(audio_path=audio_path)
         words = list(timestamped_transcript_by_words.values())
         jobs[job_id]["progress"] = 30
+        jobs[job_id]["current_task"] = "Analyzing word patterns"
         
         # Calculate word count
         logger.info("Counting words")
@@ -151,6 +154,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # Combine words into a single unpunctuated string
         full_unpunctuated_text = ' '.join(word for _, word in timestamped_transcript_by_words.items())
         jobs[job_id]["progress"] = 40
+        jobs[job_id]["current_task"] = "Adding punctuation and formatting"
         
         # Add punctuation to the full text
         logger.info("Adding punctuation")
@@ -177,6 +181,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         logger.info(f"Floss analysis found {len(floss_spans)} problematic spans")
 
         jobs[job_id]["progress"] = 50
+        jobs[job_id]["current_task"] = "Checking grammar and corrections"
         
         # --- Grammar Correction (now using grammar_tone.get_mistakes_and_text) ---
         logger.info("Getting grammar corrections")
@@ -213,12 +218,14 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         
         corrected_transcript_with_highlights = highlighted_text
         jobs[job_id]["progress"] = 60
+        jobs[job_id]["current_task"] = "Analyzing parts of speech"
 
         # Analyze parts of speech
         logger.info("Analyzing parts of speech")
         parts_of_speech_dict = parts_of_speech.parts_of_speech(full_text)
         logger.info(parts_of_speech_dict)
         jobs[job_id]["progress"] = 70
+        jobs[job_id]["current_task"] = "Analyzing speech rate and volume"
         
         # Calculate rate of speech points over time
         logger.info("Analyzing rate of speech")
@@ -229,10 +236,11 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         volume_points_list = read_volume.get_rms_per_segment(audio_path)
         volume_points = {str(ts): float(rms) for ts, rms in volume_points_list}
         jobs[job_id]["progress"] = 80
+        jobs[job_id]["current_task"] = "Analyzing tone and sentiment"
         
         # Analyze custom tones (Grammarly-like, now using Sapling)
         logger.info("Getting tone")
-        custom_tone_results = sapling.get_tone(full_text)
+        custom_tone_results, extra_tone_results = sapling.get_tone(full_text)
 
         # Analyze hand positions and activity
         logger.info("Looking at hands and eyes")
@@ -240,6 +248,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         hand_position_results_text = str(hand_position_results_dict)
         # hand_position_results_text = pose_tracking.format_analysis_results(hand_position_results_dict)
         jobs[job_id]["progress"] = 90
+        jobs[job_id]["current_task"] = "Analyzing body language and gaze"
 
         # Analyze gaze
         logger.info("Looking at gaze")
@@ -268,6 +277,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # Add readability score
         logger.info("Looking at readability")   
         readability_score = readability.readibility_score(len(full_text.split(".")), words)
+        jobs[job_id]["current_task"] = "Calculating proficiency scores"
 
         # Add CEFR score
         logger.info("Looking at CEFR")
@@ -290,6 +300,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
             "volume_points": volume_points,
             "tone_scores": custom_tone_results,
             "custom_tone_results": custom_tone_results,
+            "extra_tone_results": extra_tone_results,
             "transcript": full_text,
             "corrected_transcript": corrected_transcript_with_highlights,
             "grammar_mistakes": grammar_mistakes,
@@ -310,6 +321,7 @@ def process_video_analysis_sync(job_id: str, file_path: str):
         # Update job with results
         jobs[job_id]["status"] = "completed"
         jobs[job_id]["progress"] = 100
+        jobs[job_id]["current_task"] = "Analysis complete"
         jobs[job_id]["results"] = json_content
         jobs[job_id]["completed_at"] = str(threading.current_thread().ident)
         
@@ -575,6 +587,7 @@ async def get_job_status(job_id: str):
         return JSONResponse(content={
             "status": "completed",
             "progress": 100,
+            "current_task": job.get("current_task", "Analysis complete"),
             "results": job["results"]
         }, headers=headers)
     elif job["status"] == "failed":
@@ -585,7 +598,8 @@ async def get_job_status(job_id: str):
     else:
         return JSONResponse(content={
             "status": job["status"],
-            "progress": job.get("progress", 0)
+            "progress": job.get("progress", 0),
+            "current_task": job.get("current_task", "Processing...")
         }, headers=headers)
 
 @app.options("/api/jobs")

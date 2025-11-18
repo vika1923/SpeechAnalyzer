@@ -40,10 +40,26 @@ import {
  * The main Home component for the Speech Analyzer application, styled as a SaaS landing page.
  * Handles video uploads, displays upload status, errors, and analysis results.
  */
+// Define all processing tasks in order
+const PROCESSING_TASKS = [
+  { id: 1, name: "Converting video to audio", threshold: 10 },
+  { id: 2, name: "Transcribing speech to text", threshold: 20 },
+  { id: 3, name: "Analyzing word patterns", threshold: 30 },
+  { id: 4, name: "Adding punctuation and formatting", threshold: 40 },
+  { id: 5, name: "Checking grammar and corrections", threshold: 50 },
+  { id: 6, name: "Analyzing parts of speech", threshold: 60 },
+  { id: 7, name: "Analyzing speech rate and volume", threshold: 70 },
+  { id: 8, name: "Analyzing tone and sentiment", threshold: 80 },
+  { id: 9, name: "Analyzing body language and gaze", threshold: 90 },
+  { id: 10, name: "Calculating proficiency scores", threshold: 95 },
+  { id: 11, name: "Analysis complete", threshold: 100 },
+];
+
 export default function App() {
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentTask, setCurrentTask] = useState<string>("");
   const [jobId, setJobId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +124,7 @@ export default function App() {
           console.log(`Job ${jobId} completed successfully`);
           setProcessing(false);
           setProgress(100);
+          setCurrentTask(jobData.current_task || "Analysis complete");
           if (jobData.results) {
             // Cleanup any locally stored recorded video once analysis completes
             try { localStorage.removeItem('recordedVideo'); } catch {}
@@ -125,8 +142,10 @@ export default function App() {
         } else {
           // Update progress for uploading, uploaded, processing states
           const newProgress = jobData.progress || 0;
-          console.log(`Job ${jobId} status: ${jobData.status}, progress: ${newProgress}%`);
+          const newTask = jobData.current_task || "Processing...";
+          console.log(`Job ${jobId} status: ${jobData.status}, progress: ${newProgress}%, task: ${newTask}`);
           setProgress(newProgress);
+          setCurrentTask(newTask);
         }
         
         // Wait 1 second before next poll
@@ -208,6 +227,7 @@ export default function App() {
     setError("");
     setUploading(true);
     setProgress(0);
+    setCurrentTask("");
     
     const formData = new FormData();
     formData.append("file", file);
@@ -551,23 +571,73 @@ export default function App() {
                 disabled={isProcessingState}
               />
 
-              <div className="flex flex-col items-center space-y-4">
-                <p className="text-gray-700 text-lg font-medium text-center whitespace-pre-line">
-                  {statusMessage}
-                </p>
+              <div className="flex flex-col items-center space-y-4 w-full">
+                {!processing ? (
+                  <p className="text-gray-700 text-lg font-medium text-center whitespace-pre-line">
+                    {statusMessage}
+                  </p>
+                ) : (
+                  <div className="w-full max-w-md space-y-4">
+                    {/* Progress Bar */}
+                    <div className="w-full">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-gray-700 text-sm font-medium">Progress</p>
+                        <p className="text-indigo-600 text-sm font-semibold">{progress}%</p>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div 
+                          className="bg-indigo-600 h-3 rounded-full transition-all duration-500 ease-out"
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
 
-                {/* Progress Bar */}
-                {processing && (
-                  <div className="w-full max-w-xs bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-indigo-600 h-2 rounded-full transition-all duration-500 ease-out"
-                      style={{ width: `${progress}%` }}
-                    ></div>
+                    {/* Task List */}
+                    <div className="w-full bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Processing Tasks</h3>
+                      <ul className="space-y-2">
+                        {PROCESSING_TASKS.map((task, index) => {
+                          const isCurrent = currentTask === task.name;
+                          // A task is completed only if we've moved past it (progress is beyond its threshold AND it's not the current task)
+                          const isCompleted = progress > task.threshold && !isCurrent;
+                          
+                          return (
+                            <li 
+                              key={task.id} 
+                              className={`flex items-start space-x-2 text-sm transition-all duration-300 ${
+                                isCurrent ? 'text-indigo-600 font-bold' : 
+                                isCompleted ? 'text-gray-400' : 'text-gray-600'
+                              }`}
+                            >
+                              <span className="flex-shrink-0 mt-0.5">
+                                {isCompleted ? (
+                                  <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : isCurrent ? (
+                                  <svg className="w-4 h-4 animate-spin text-indigo-600" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <circle cx="12" cy="12" r="10" strokeWidth="2" />
+                                  </svg>
+                                )}
+                              </span>
+                              <span className={isCompleted ? 'line-through' : ''}>
+                                {task.name}
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
                   </div>
                 )}
 
                 {/* Selected file / recording status */}
-                {selectedFile && (
+                {selectedFile && !processing && (
                   <div className="text-sm text-gray-600">
                     Selected: <span className="font-medium">{selectedFile.name}</span>
                   </div>
