@@ -375,6 +375,14 @@ export default function ResultsDisplay({ results }: { results: AnalysisResults }
             fill="none"
           />
 
+          <circle
+            cx={centerX}
+            cy={centerY}
+            r={(0.075 * 2 / rangeX) * HALF_WIDTH}
+            stroke="#52a447"
+            strokeWidth="0.7"
+            fill="none"
+          />
           {/* Points */}
           {gazePlotData.xs.map((x, idx) => (
             <circle key={idx} cx={mapX(x)} cy={mapY(gazePlotData.ys[idx])} r={1.5} fill="#eab308" fillOpacity="0.85" />
