@@ -1,0 +1,47 @@
+from faster_whisper import WhisperModel
+from typing import Dict
+from .custom_types import TimeStamp
+from .my_logger import get_logger
+
+# audio_path = "SoliyevShort.wav"
+
+logger = get_logger(__name__)
+
+model_size = "large-v3"
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        logger.info(f"Loading WhisperModel: {model_size}")
+        _model = WhisperModel(model_size, device="cpu", compute_type="int8")
+        logger.info("WhisperModel loaded successfully")
+    return _model
+
+
+def speech_to_words(audio_path: str) -> Dict[TimeStamp, str]:
+    logger.info(f"speech_to_words called with audio_path: {audio_path}")
+    try:
+        model = get_model()
+        segments, _ = model.transcribe(
+            audio_path, language="en", beam_size=5, word_timestamps=True
+        )
+
+        output = {}
+
+        for segment in segments:
+            for word in segment.words or []:
+                start = round(word.start, 2)
+                end = round(word.end, 2)
+                text = word.word.strip()
+                # Only add if text is not empty
+                if text:
+                    output[(start, end)] = text
+
+        # for k, v in output.items():
+        #     print(k, v)
+        logger.info("Successfully transcribed speech to words.")
+        return output
+    except Exception as e:
+        logger.error(f"Error in speech_to_words: {e}", exc_info=True)
+        raise

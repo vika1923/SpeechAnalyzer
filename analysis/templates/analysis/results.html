@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Results - CommAI</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'analysis/css/style.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+
+<body class="relative min-h-screen w-full bg-[#dbc7fe] flex flex-col items-center p-4 sm:p-8" id="results-print-root">
+    <!-- Background Elements -->
+    <div class="absolute top-1/4 left-0 -translate-y-1/2 -translate-x-1/2 w-64 h-64 bg-[#80003a] rotate-45"></div>
+    <div class="absolute top-1/4 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-[#80003a] rotate-45"></div>
+    <div class="absolute top-3/4 left-0 -translate-y-1/2 -translate-x-1/2 w-64 h-64 bg-[#80003a] rotate-45"></div>
+    <div class="absolute top-3/4 right-0 -translate-y-1/2 translate-x-1/2 w-64 h-64 bg-[#80003a] rotate-45"></div>
+
+    <header class="relative w-full max-w-7xl mx-auto flex justify-between items-center py-4 px-4 sm:px-0">
+        <a href="/" class="text-[#80003a] text-2xl font-bold font-display">CommAI</a>
+        <nav class="space-x-4">
+            <a href="/about" class="text-[#80003a] hover:text-[#511b2c] transition-colors">About</a>
+            <a href="/results" class="text-[#80003a] hover:text-[#511b2c] transition-colors">Results</a>
+        </nav>
+    </header>
+
+    <main class="relative w-full max-w-full px-5 py-8 flex-grow flex flex-col items-center justify-center">
+        <div class="w-full mx-auto" id="resultsContainer">
+            <div id="loadingMessage" class="text-[#80003a] text-center text-xl">Loading results...</div>
+            <div id="errorMessage" class="hidden text-red-700 text-center text-xl bg-red-100 p-4 rounded-lg"></div>
+
+            <div id="resultsContent" class="hidden">
+                <div id="results-capture">
+                    <h1 class="text-4xl font-bold mb-6 text-[#80003a] text-center">CommAI Analysis</h1>
+
+                    <!-- User Info Display -->
+                    <div id="userInfoSection" class="hidden w-full text-center mb-6">
+                        <div class="p-2">
+                            <div class="flex flex-col items-center gap-1">
+                                <div class="text-[#80003a] font-display text-2xl font-semibold" id="display-user-name">
+                                </div>
+                                <div class="text-[#80003a] font-display text-xl font-semibold">Age: <span
+                                        id="display-user-age"></span></div>
+                                <div class="text-[#80003a] font-display text-xl font-semibold" id="display-user-org">
+                                </div>
+                                <div class="text-[#80003a] font-display text-xl font-semibold capitalize"
+                                    id="display-user-role"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center pt-2 mb-4">
+                        <h1 class="text-xl text-[#80003a]">Verbal Communication</h1>
+                    </div>
+
+                    <!-- Verbal Communication Metrics -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <!-- Linguistic Counts -->
+                        <div class="border-2 border-yellow-500 bg-yellow-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-lg text-yellow-700 mb-4">Linguistic Structures Counts</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <p class="text-sm font-medium text-yellow-600 mb-1">Letters</p>
+                                    <p class="text-2xl font-bold text-yellow-700" id="metric-letters">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-yellow-600 mb-1">Words</p>
+                                    <p class="text-2xl font-bold text-yellow-700" id="metric-words">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-yellow-600 mb-1">Sentences</p>
+                                    <p class="text-2xl font-bold text-yellow-700" id="metric-sentences">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-yellow-600 mb-1">Paragraphs</p>
+                                    <p class="text-2xl font-bold text-yellow-700" id="metric-paragraphs">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Language Proficiency -->
+                        <div class="border-2 border-teal-500 bg-teal-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-lg text-teal-700 mb-4">Language Proficiency</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <p class="text-sm font-medium text-teal-600 mb-1">CEFR Level</p>
+                                    <p class="text-2xl font-bold text-teal-700" id="metric-cefr">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-teal-600 mb-1">IELTS Score</p>
+                                    <p class="text-2xl font-bold text-teal-700" id="metric-ielts">-</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-teal-600 mb-1">Readability Score</p>
+                                    <p class="text-2xl font-bold text-teal-700" id="metric-readability">-</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sentiment Analysis -->
+                        <div class="border-2 border-red-500 bg-red-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-lg text-red-700 mb-2">Sentiment Analysis</h3>
+                            <ul class="space-y-2" id="sentiment-list"></ul>
+                            <div id="extra-sentiment-section" class="hidden mt-4 pt-4 border-t border-red-300">
+                                <h4 class="font-display text-md text-red-600 mb-2">Other detected tones</h4>
+                                <ul class="space-y-2" id="extra-sentiment-list"></ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <!-- Parts of Speech -->
+                        <div class="md:col-span-2 border-2 border-indigo-700 bg-indigo-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-lg text-indigo-700 mb-4">Parts of Speech Distribution</h3>
+                            <div style="height: 300px;">
+                                <canvas id="posChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Active & Passive Voice -->
+                        <div class="border-2 border-indigo-700 bg-indigo-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-lg text-indigo-700 mb-4">Active & Passive Voice</h3>
+                            <div style="height: 250px;">
+                                <canvas id="activePassiveChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center pt-2 mb-4">
+                        <h1 class="text-xl text-[#80003a]">Non-Verbal Communication</h1>
+                    </div>
+
+                    <!-- Non-Verbal Communication -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                        <!-- Rate of Speech -->
+                        <div class="border-2 border-teal-500 bg-teal-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-lg text-teal-700 mb-2">Rate of Speech (Words/Min)</h3>
+                            <div style="height: 200px;">
+                                <canvas id="rateChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Hand & Eye Activity -->
+                        <div class="border-2 border-red-500 bg-red-50 p-6 shadow-xl rounded-xl">
+                            <div class="space-y-3 text-sm">
+                                <div id="hand-activity-section" class="hidden">
+                                    <h4 class="font-display text-lg text-red-700 mb-2">Gestures (Hand Activity):</h4>
+                                    <div class="space-y-1 text-gray-700">
+                                        <p>Left Hand Avg: <span id="hand-left">-</span>%</p>
+                                        <p>Right Hand Avg: <span id="hand-right">-</span>%</p>
+                                        <p>Combined Avg: <span id="hand-combined">-</span>%</p>
+                                        <p>Distance Changes: <span id="hand-distance">-</span></p>
+                                        <p>Avg Distance Change/Frame: <span id="hand-avg-distance">-</span></p>
+                                    </div>
+                                </div>
+                                <div id="eye-activity-section" class="hidden">
+                                    <h4 class="font-display text-lg text-red-700 mb-2">Oculesics (Eyes Activity):</h4>
+                                    <div class="space-y-1 text-gray-700">
+                                        <p>Left Eyebrow Avg: <span id="eye-left">-</span>%</p>
+                                        <p>Right Eyebrow Avg: <span id="eye-right">-</span>%</p>
+                                        <p>Combined Eyebrows Avg: <span id="eye-combined">-</span>%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Volume Analysis -->
+                        <div class="border-2 border-orange-500 bg-orange-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-lg text-orange-700 mb-2">Volume Levels Analysis</h3>
+                            <div style="height: 200px;">
+                                <canvas id="volumeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hand Position & Gaze -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Hand Position Stickman -->
+                        <div class="border-2 border-gray-500 bg-gray-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-xl text-gray-700 mb-4">Hand Position Analysis</h3>
+                            <div id="stickman-container" class="flex flex-col items-center"></div>
+                        </div>
+
+                        <!-- Gaze Analysis -->
+                        <div class="border-2 border-yellow-500 bg-yellow-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-lg text-yellow-700 mb-3">Gaze Analysis</h3>
+                            <div id="gaze-container"></div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-center pt-2 mb-4">
+                        <h1 class="text-xl text-[#80003a]">Speech Content</h1>
+                    </div>
+
+                    <!-- Transcripts -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <!-- Original Transcript -->
+                        <div class="border-2 border-green-500 bg-green-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-xl text-green-700 mb-4">Original Transcript</h3>
+                            <p id="original-transcript" class="font-body text-gray-800 leading-relaxed"></p>
+                        </div>
+
+                        <!-- Corrected Transcript -->
+                        <div class="border-2 border-blue-500 bg-blue-50 p-6 shadow-xl rounded-xl relative">
+                            <h3 class="font-display text-xl text-blue-700 mb-4">Corrected Transcript</h3>
+                            <p id="corrected-transcript"
+                                class="font-body text-gray-800 leading-relaxed grammar-highlight"></p>
+                            <div id="copyAlert"
+                                class="hidden absolute bottom-16 right-6 bg-blue-600 text-white text-xs font-medium px-3 py-1 rounded shadow-lg">
+                                Copied!
+                            </div>
+                            <button type="button" id="copyBtn"
+                                class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors">
+                                Copy Transcript
+                            </button>
+                        </div>
+
+                        <!-- Grammar Suggestions -->
+                        <div id="grammar-section"
+                            class="hidden md:col-span-2 border-2 border-purple-500 bg-purple-50 p-6 shadow-xl rounded-xl">
+                            <h3 class="font-display text-xl text-purple-700 mb-4">Grammar Suggestions</h3>
+                            <ul id="grammar-list" class="list-disc pl-5 font-body text-gray-800 space-y-2"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="text-center mt-8 flex items-center justify-center gap-4 print:hidden">
+                    <button onclick="window.location.href='/'"
+                        class="bg-indigo-700 text-white px-8 py-4 rounded-full hover:bg-indigo-800 transition-colors shadow-md active:scale-95">
+                        Analyze Another Video
+                    </button>
+                    <button id="downloadPdfBtn"
+                        class="bg-[#80003a] text-white px-8 py-4 rounded-full hover:bg-[#6b012f] transition-colors shadow-md active:scale-95">
+                        Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="relative w-full py-8 max-w-6xl mx-auto print:hidden">
+        <div class="text-center text-[#80003a] text-sm">
+            <span id="currentYear"></span> For Expert Interpretation and Advice, write to CommLabAUT@aut-edu.uz with the
+            Report PDF.
+        </div>
+        <div class="text-center text-[rgb(128,0,58)] text-sm mt-2">
+            Disclaimer: This is an AI-enabled Tool and Reports must be further correlated by an expert.
+        </div>
+    </footer>
+
+    <script src="{% static 'analysis/js/results.js' %}"></script>
+</body>
+
+</html>
